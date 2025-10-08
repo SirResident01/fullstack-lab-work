@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -106,3 +106,24 @@ class StatusResponse(BaseModel):
 class MessageResponse(BaseModel):
     message: str
     success: bool = True
+
+# ==================== AUTHENTICATION SCHEMAS ====================
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class UserRegister(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="Имя пользователя")
+    password: str = Field(..., min_length=6, max_length=60, description="Пароль (максимум 60 символов)")
+    confirm_password: str = Field(..., min_length=6, max_length=60, description="Подтверждение пароля")
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    username: str
+    role: str

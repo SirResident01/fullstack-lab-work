@@ -62,28 +62,24 @@ const CarCard: React.FC<CarCardProps> = ({
           </div>
         </div>
 
-        {showActions && (
+        {showActions && onEdit && onDelete && (
           <div className="flex space-x-2 ml-4">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(car)}
-                className="p-2"
-              >
-                ✏️
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => onDelete(car)}
-                className="p-2"
-              >
-                🗑️
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(car)}
+              className="p-2"
+            >
+              ✏️
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onDelete(car)}
+              className="p-2"
+            >
+              🗑️
+            </Button>
           </div>
         )}
       </div>

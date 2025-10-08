@@ -20,6 +20,14 @@ const OwnerCard: React.FC<OwnerCardProps> = ({
 }) => {
   const initials = getInitials(owner.firstname, owner.lastname);
   const carCount = owner.cars.length;
+  
+  // Отладочная информация
+  console.log('🔍 OwnerCard Debug:', {
+    ownerId: owner.ownerid,
+    showActions,
+    hasOnEdit: !!onEdit,
+    hasOnDelete: !!onDelete
+  });
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -73,28 +81,32 @@ const OwnerCard: React.FC<OwnerCardProps> = ({
           )}
         </div>
 
-        {showActions && (
+        {/* КНОПКИ ПОЛНОСТЬЮ УБРАНЫ - НЕ ПОКАЗЫВАЮТСЯ НИКОГДА */}
+        {false && (
           <div className="flex space-x-2 ml-4">
-            {onEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEdit(owner)}
-                className="p-2"
-              >
-                ✏️
-              </Button>
-            )}
-            {onDelete && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => onDelete(owner)}
-                className="p-2"
-              >
-                🗑️
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(owner)}
+              className="p-2"
+            >
+              ✏️
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => onDelete(owner)}
+              className="p-2"
+            >
+              🗑️
+            </Button>
+          </div>
+        )}
+        
+        {/* Принудительно скрываем кнопки для отладки */}
+        {!showActions && (
+          <div className="text-xs text-gray-400 ml-4">
+            showActions: {String(showActions)}, onEdit: {String(!!onEdit)}, onDelete: {String(!!onDelete)}
           </div>
         )}
       </div>

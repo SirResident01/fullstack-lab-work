@@ -4,6 +4,16 @@ from sqlalchemy import String, Integer, ForeignKey
 class Base(DeclarativeBase):
     pass
 
+# ==================== USER MODEL ====================
+
+class AppUser(Base):
+    __tablename__ = "app_users"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(20), default="USER")  # USER or ADMIN
+
 class Owner(Base):
     __tablename__ = "owner"
     ownerid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

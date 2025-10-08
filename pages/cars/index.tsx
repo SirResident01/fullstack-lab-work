@@ -9,6 +9,7 @@ import { CarWithOwner, CarCreate, CarUpdate, OwnerResponse } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
 import { useSearchState } from '@/hooks/useSearchState';
 import { useDataRefresh } from '@/hooks/useDataRefresh';
+import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { CardHeader, CardBody } from '@/components/ui/Card';
@@ -21,6 +22,10 @@ import Modal from '@/components/ui/Modal';
 export default function CarsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isAdmin, user, isAuthenticated } = useAuth();
+  
+  // Принудительно проверяем, что пользователь является администратором
+  const isReallyAdmin = isAuthenticated && user?.role === 'ADMIN';
   useDataRefresh();
   
   const [showForm, setShowForm] = useState(false);
@@ -135,13 +140,15 @@ export default function CarsPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2"
-              >
-                ➕
-                <span>Добавить автомобиль</span>
-              </Button>
+              {isReallyAdmin && (
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center space-x-2"
+                >
+                  ➕
+                  <span>Добавить автомобиль</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
@@ -181,11 +188,16 @@ export default function CarsPage() {
                     Автомобили не найдены
                   </h3>
                   <p className="text-gray-500 mb-4">
-                    Попробуйте изменить параметры поиска или добавьте новый автомобиль
+                    {isReallyAdmin 
+                      ? 'Попробуйте изменить параметры поиска или добавьте новый автомобиль'
+                      : 'Попробуйте изменить параметры поиска'
+                    }
                   </p>
-                  <Button onClick={() => setShowForm(true)}>
-                    Добавить автомобиль
-                  </Button>
+                  {isReallyAdmin && (
+                    <Button onClick={() => setShowForm(true)}>
+                      Добавить автомобиль
+                    </Button>
+                  )}
                 </CardBody>
               </Card>
             ) : (
@@ -194,8 +206,9 @@ export default function CarsPage() {
                   <CarCard
                     key={car.id}
                     car={car}
-                    onEdit={handleEditCar}
-                    onDelete={handleDeleteClick}
+                    onEdit={isReallyAdmin ? handleEditCar : undefined}
+                    onDelete={isReallyAdmin ? handleDeleteClick : undefined}
+                    showActions={isReallyAdmin}
                   />
                 ))}
               </div>
@@ -203,30 +216,35 @@ export default function CarsPage() {
           </div>
         </main>
 
-        {/* Forms and Modals */}
-        <CarForm
-          isOpen={showForm}
-          onClose={() => setShowForm(false)}
-          onSubmit={handleCreateCar}
-          owners={owners}
-          loading={createCarMutation.isLoading}
-        />
+        {/* Forms and Modals - только для администраторов */}
+        {isReallyAdmin && (
+          <>
+            <CarForm
+              isOpen={showForm}
+              onClose={() => setShowForm(false)}
+              onSubmit={handleCreateCar}
+              owners={owners}
+              loading={createCarMutation.isLoading}
+            />
 
-        <CarForm
-          isOpen={!!editingCar}
-          onClose={() => setEditingCar(null)}
-          onSubmit={handleUpdateCar}
-          car={editingCar || undefined}
-          owners={owners}
-          loading={updateCarMutation.isLoading}
-        />
+            <CarForm
+              isOpen={!!editingCar}
+              onClose={() => setEditingCar(null)}
+              onSubmit={handleUpdateCar}
+              car={editingCar || undefined}
+              owners={owners}
+              loading={updateCarMutation.isLoading}
+            />
+          </>
+        )}
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={!!deletingCar}
-          onClose={() => setDeletingCar(null)}
-          title="Удалить автомобиль"
-        >
+        {/* Delete Confirmation Modal - только для администраторов */}
+        {isReallyAdmin && (
+          <Modal
+            isOpen={!!deletingCar}
+            onClose={() => setDeletingCar(null)}
+            title="Удалить автомобиль"
+          >
           {deletingCar && (
             <div className="space-y-4">
               <p className="text-gray-600">
@@ -256,7 +274,8 @@ export default function CarsPage() {
               </div>
             </div>
           )}
-        </Modal>
+          </Modal>
+        )}
       </div>
     </>
   );

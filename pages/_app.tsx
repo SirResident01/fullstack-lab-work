@@ -3,6 +3,7 @@ import type { AppProps } from 'next/app';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { useState } from 'react';
 import { ReactQueryDevtools } from 'react-query/devtools';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export default function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(() => new QueryClient({
@@ -20,8 +21,10 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Component {...pageProps} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <AuthProvider>
+        <Component {...pageProps} />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

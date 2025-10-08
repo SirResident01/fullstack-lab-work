@@ -9,6 +9,7 @@ import { OwnerResponse, OwnerCreate, OwnerUpdate } from '@/types/api';
 import { getInitials } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useDataRefresh } from '@/hooks/useDataRefresh';
+import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { CardHeader, CardBody } from '@/components/ui/Card';
@@ -21,6 +22,43 @@ import Input from '@/components/ui/Input';
 export default function OwnersPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isAdmin, user, isAuthenticated } = useAuth();
+  
+  // ПРИНУДИТЕЛЬНО СКРЫВАЕМ КНОПКИ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ КРОМЕ ADMIN
+  const isReallyAdmin = isAuthenticated && user?.role === 'ADMIN';
+  
+  // ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА - ЕСЛИ НЕ АВТОРИЗОВАН, ТО НЕ АДМИН
+  if (!isAuthenticated) {
+    console.log('🚨 Пользователь не авторизован! Кнопки должны быть скрыты!');
+  }
+  
+  // Отладочная информация
+  console.log('🔍 OwnersPage Debug:', {
+    isAdmin,
+    isReallyAdmin,
+    user,
+    isAuthenticated,
+    userRole: user?.role,
+    userRoleType: typeof user?.role,
+    userRoleEqualsAdmin: user?.role === 'ADMIN',
+    userRoleEqualsUser: user?.role === 'USER'
+  });
+  
+  // Принудительно показываем отладочную информацию на странице
+  if (!isReallyAdmin) {
+    console.log('🚨 Пользователь НЕ является администратором! Кнопки должны быть скрыты!');
+    console.log('🚨 Детали:', {
+      isAuthenticated,
+      userRole: user?.role,
+      isReallyAdmin
+    });
+  }
+  
+  // Если пользователь не авторизован, перенаправляем на страницу входа
+  if (!isAuthenticated) {
+    router.push('/login');
+    return null;
+  }
   useDataRefresh();
   
   const [showForm, setShowForm] = useState(false);
@@ -49,6 +87,12 @@ export default function OwnersPage() {
         queryClient.invalidateQueries('owners');
         setShowForm(false);
       },
+      onError: (error: any) => {
+        console.error('Ошибка создания владельца:', error);
+        if (error.response?.status === 403) {
+          alert('У вас нет прав для создания владельцев');
+        }
+      },
     }
   );
 
@@ -60,6 +104,12 @@ export default function OwnersPage() {
         queryClient.invalidateQueries('owners');
         setEditingOwner(null);
       },
+      onError: (error: any) => {
+        console.error('Ошибка обновления владельца:', error);
+        if (error.response?.status === 403) {
+          alert('У вас нет прав для редактирования владельцев');
+        }
+      },
     }
   );
 
@@ -70,6 +120,12 @@ export default function OwnersPage() {
       onSuccess: () => {
         queryClient.invalidateQueries('owners');
         setDeletingOwner(null);
+      },
+      onError: (error: any) => {
+        console.error('Ошибка удаления владельца:', error);
+        if (error.response?.status === 403) {
+          alert('У вас нет прав для удаления владельцев');
+        }
       },
     }
   );
@@ -127,19 +183,29 @@ export default function OwnersPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2"
-              >
-                ➕
-                <span>Добавить владельца</span>
-              </Button>
+              {isReallyAdmin && (
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center space-x-2"
+                >
+                  ➕
+                  <span>Добавить владельца</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Отладочная информация */}
+          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+            <p className="text-sm">
+              <strong>Отладка:</strong> isReallyAdmin = {String(isReallyAdmin)}, 
+              user.role = {user?.role}, 
+              isAuthenticated = {String(isAuthenticated)}
+            </p>
+          </div>
           {/* Search */}
           <div className="mb-8">
             <Card>
@@ -193,12 +259,14 @@ export default function OwnersPage() {
                   <p className="text-gray-500 mb-4">
                     {searchTerm 
                       ? 'Попробуйте изменить поисковый запрос'
-                      : 'Добавьте первого владельца в систему'
+                      : isReallyAdmin ? 'Добавьте первого владельца в систему' : 'Владельцы отсутствуют'
                     }
                   </p>
-                  <Button onClick={() => setShowForm(true)}>
-                    Добавить владельца
-                  </Button>
+                  {isReallyAdmin && (
+                    <Button onClick={() => setShowForm(true)}>
+                      Добавить владельца
+                    </Button>
+                  )}
                 </CardBody>
               </Card>
             ) : (
@@ -207,8 +275,9 @@ export default function OwnersPage() {
                   <OwnerCard
                     key={owner.ownerid}
                     owner={owner}
-                    onEdit={handleEditOwner}
-                    onDelete={handleDeleteClick}
+                    onEdit={isReallyAdmin ? handleEditOwner : undefined}
+                    onDelete={isReallyAdmin ? handleDeleteClick : undefined}
+                    showActions={isReallyAdmin}
                   />
                 ))}
               </div>
@@ -216,28 +285,33 @@ export default function OwnersPage() {
           </div>
         </main>
 
-        {/* Forms and Modals */}
-        <OwnerForm
-          isOpen={showForm}
-          onClose={() => setShowForm(false)}
-          onSubmit={handleCreateOwner}
-          loading={createOwnerMutation.isLoading}
-        />
+        {/* Forms and Modals - только для администраторов */}
+        {isReallyAdmin && (
+          <>
+            <OwnerForm
+              isOpen={showForm}
+              onClose={() => setShowForm(false)}
+              onSubmit={handleCreateOwner}
+              loading={createOwnerMutation.isLoading}
+            />
 
-        <OwnerForm
-          isOpen={!!editingOwner}
-          onClose={() => setEditingOwner(null)}
-          onSubmit={handleUpdateOwner}
-          owner={editingOwner || undefined}
-          loading={updateOwnerMutation.isLoading}
-        />
+            <OwnerForm
+              isOpen={!!editingOwner}
+              onClose={() => setEditingOwner(null)}
+              onSubmit={handleUpdateOwner}
+              owner={editingOwner || undefined}
+              loading={updateOwnerMutation.isLoading}
+            />
+          </>
+        )}
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={!!deletingOwner}
-          onClose={() => setDeletingOwner(null)}
-          title="Удалить владельца"
-        >
+        {/* Delete Confirmation Modal - только для администраторов */}
+        {isReallyAdmin && (
+          <Modal
+            isOpen={!!deletingOwner}
+            onClose={() => setDeletingOwner(null)}
+            title="Удалить владельца"
+          >
           {deletingOwner && (
             <div className="space-y-4">
               <p className="text-gray-600">
@@ -275,7 +349,8 @@ export default function OwnersPage() {
               </div>
             </div>
           )}
-        </Modal>
+          </Modal>
+        )}
       </div>
     </>
   );

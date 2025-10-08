@@ -2,19 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 // Иконки заменены на эмодзи для упрощения
 import { apiClient } from '@/lib/api';
 import { CarStatistics, OwnerStatistics } from '@/types/api';
 import { useDataRefresh } from '@/hooks/useDataRefresh';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { CardHeader, CardBody } from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import UserMenu from '@/components/auth/UserMenu';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 export default function HomePage() {
+  const { isAuthenticated, user, isLoading, isAdmin } = useAuth();
+  const router = useRouter();
+  
   useDataRefresh();
   useAutoRefresh(60000); // Обновляем каждую минуту
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, isLoading, router]);
   
   const { data: carStats, isLoading: carStatsLoading, error: carStatsError } = useQuery(
     'carStatistics',
@@ -34,6 +48,7 @@ export default function HomePage() {
     }
   );
 
+
   const { data: status } = useQuery(
     'status',
     () => apiClient.getStatus(),
@@ -42,6 +57,17 @@ export default function HomePage() {
     }
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Redirect will happen in useEffect
+  }
 
   return (
     <>
@@ -76,6 +102,7 @@ export default function HomePage() {
                 }`}>
                   {status?.status === 'ok' ? 'Онлайн' : 'Офлайн'}
                 </span>
+                <UserMenu />
               </div>
             </div>
           </div>
@@ -154,6 +181,7 @@ export default function HomePage() {
                 </CardBody>
               </Card>
             </Link>
+
           </div>
 
           {/* Statistics */}
@@ -194,12 +222,12 @@ export default function HomePage() {
                       </div>
                       <div className="text-sm text-yellow-600">Средняя цена</div>
                     </div>
-                    {carStats.most_expensive && (
+                    {carStats.most_expensive_car && (
                       <div className="p-4 bg-gray-50 rounded-lg">
                         <div className="text-sm font-medium text-gray-700 mb-1">Самый дорогой:</div>
                         <div className="text-sm text-gray-600">
-                          {carStats.most_expensive.brand} {carStats.most_expensive.model} - 
-                          {new Intl.NumberFormat('ru-RU').format(carStats.most_expensive.price)} ₸
+                          {carStats.most_expensive_car.brand} {carStats.most_expensive_car.model} - 
+                          {new Intl.NumberFormat('ru-RU').format(carStats.most_expensive_car.price)} ₸
                         </div>
                       </div>
                     )}

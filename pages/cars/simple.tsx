@@ -5,11 +5,14 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { CarWithOwner, CarCreate, CarUpdate, OwnerResponse } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Button from '@/components/ui/Button';
 import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function SimpleCarsPage() {
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingCar, setEditingCar] = useState<CarWithOwner | null>(null);
@@ -89,7 +92,7 @@ export default function SimpleCarsPage() {
   };
 
   return (
-    <>
+    <ProtectedRoute>
       <Head>
         <title>Автомобили - Система управления</title>
         <meta name="description" content="Управление автомобилями в системе" />
@@ -111,13 +114,15 @@ export default function SimpleCarsPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2"
-              >
-                <span>➕</span>
-                <span>Добавить автомобиль</span>
-              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <span>➕</span>
+                  <span>Добавить автомобиль</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
@@ -175,22 +180,24 @@ export default function SimpleCarsPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingCar(car)}
-                          >
-                            ✏️
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => setDeletingCar(car)}
-                          >
-                            🗑️
-                          </Button>
-                        </div>
+                        {isAdmin && (
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingCar(car)}
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => setDeletingCar(car)}
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2 mb-4">
@@ -524,6 +531,6 @@ export default function SimpleCarsPage() {
           </div>
         )}
       </div>
-    </>
+    </ProtectedRoute>
   );
 }

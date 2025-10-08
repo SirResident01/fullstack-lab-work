@@ -14,6 +14,7 @@ import {
   CarStatistics,
   OwnerStatistics,
 } from '@/types/api';
+import { User, LoginRequest, RegisterRequest, LoginResponse } from '@/types/auth';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -175,6 +176,115 @@ class ApiClient {
 
   async searchOwners(query: OwnerQuery): Promise<OwnerResponse[]> {
     const response = await this.client.post('/owners/search', query);
+    return response.data;
+  }
+
+  // ==================== AUTHENTICATION ENDPOINTS ====================
+
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const response = await this.client.post('/login', { username, password });
+    return response.data;
+  }
+
+  async register(username: string, password: string, confirmPassword: string): Promise<User> {
+    const response = await this.client.post('/register', { 
+      username, 
+      password, 
+      confirm_password: confirmPassword 
+    });
+    return response.data;
+  }
+
+  async registerAdmin(username: string, password: string, confirmPassword: string): Promise<User> {
+    const response = await this.client.post('/register/admin', { 
+      username, 
+      password, 
+      confirm_password: confirmPassword 
+    });
+    return response.data;
+  }
+
+  async getCurrentUser(token: string): Promise<User> {
+    const response = await this.client.get('/users/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
+  }
+
+  // Helper method to set auth token for all requests
+  setAuthToken(token: string) {
+    this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Helper method to clear auth token
+  clearAuthToken() {
+    delete this.client.defaults.headers.common['Authorization'];
+  }
+
+  // ==================== USER MANAGEMENT ENDPOINTS ====================
+
+  async getAllUsers(skip = 0, limit = 100): Promise<UserResponse[]> {
+    const response = await this.client.get('/admin/users', {
+      params: { skip, limit },
+    });
+    return response.data;
+  }
+
+  async getUserById(userId: number): Promise<UserResponse> {
+    const response = await this.client.get(`/admin/users/${userId}`);
+    return response.data;
+  }
+
+  async updateUser(userId: number, userData: any): Promise<UserResponse> {
+    const response = await this.client.put(`/admin/users/${userId}`, userData);
+    return response.data;
+  }
+
+  async deleteUser(userId: number): Promise<MessageResponse> {
+    const response = await this.client.delete(`/admin/users/${userId}`);
+    return response.data;
+  }
+
+  // ==================== ANALYTICS ENDPOINTS ====================
+
+  async getAnalyticsOverview(): Promise<any> {
+    const response = await this.client.get('/analytics/overview');
+    return response.data;
+  }
+
+  async getCarsByYear(): Promise<any[]> {
+    const response = await this.client.get('/analytics/cars-by-year');
+    return response.data;
+  }
+
+  async getOwnersStats(): Promise<any[]> {
+    const response = await this.client.get('/analytics/owners-stats');
+    return response.data;
+  }
+
+  // ==================== SYSTEM SETTINGS ENDPOINTS ====================
+
+  async getSystemSettings(): Promise<any> {
+    const response = await this.client.get('/settings');
+    return response.data;
+  }
+
+  async updateSystemSettings(settings: any): Promise<any> {
+    const response = await this.client.put('/settings', settings);
+    return response.data;
+  }
+
+  async createSystemBackup(): Promise<any> {
+    const response = await this.client.get('/settings/backup');
+    return response.data;
+  }
+
+  async getSystemLogs(limit = 100): Promise<any> {
+    const response = await this.client.get('/settings/logs', {
+      params: { limit },
+    });
     return response.data;
   }
 }

@@ -7,13 +7,18 @@ import { OwnerResponse, OwnerCreate, OwnerUpdate } from '@/types/api';
 import Button from '@/components/ui/Button';
 import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SimpleOwnersPage() {
   const queryClient = useQueryClient();
+  const { isAdmin, user, isAuthenticated } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingOwner, setEditingOwner] = useState<OwnerResponse | null>(null);
   const [deletingOwner, setDeletingOwner] = useState<OwnerResponse | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Проверяем, что пользователь является администратором
+  const isReallyAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   // Fetch owners
   const { data: owners = [], isLoading: ownersLoading, error: ownersError } = useQuery(
@@ -108,13 +113,16 @@ export default function SimpleOwnersPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2"
-              >
-                <span>➕</span>
-                <span>Добавить владельца</span>
-              </Button>
+              {/* КНОПКА ДОБАВИТЬ ТОЛЬКО ДЛЯ АДМИНОВ */}
+              {isReallyAdmin && (
+                <Button
+                  onClick={() => setShowForm(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <span>➕</span>
+                  <span>Добавить владельца</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
@@ -178,9 +186,12 @@ export default function SimpleOwnersPage() {
                       : 'Добавьте первого владельца в систему'
                     }
                   </p>
-                  <Button onClick={() => setShowForm(true)}>
-                    Добавить владельца
-                  </Button>
+                  {/* КНОПКА ДОБАВИТЬ ТОЛЬКО ДЛЯ АДМИНОВ */}
+                  {isReallyAdmin && (
+                    <Button onClick={() => setShowForm(true)}>
+                      Добавить владельца
+                    </Button>
+                  )}
                 </CardBody>
               </Card>
             ) : (
@@ -202,22 +213,25 @@ export default function SimpleOwnersPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingOwner(owner)}
-                          >
-                            ✏️
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => setDeletingOwner(owner)}
-                          >
-                            🗑️
-                          </Button>
-                        </div>
+                        {/* КНОПКИ ТОЛЬКО ДЛЯ АДМИНОВ */}
+                        {isReallyAdmin && (
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingOwner(owner)}
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => setDeletingOwner(owner)}
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="space-y-2">
