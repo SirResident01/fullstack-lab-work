@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # MariaDB база данных
+  mariadb:
+    image: mariadb:10.11
+    container_name: car-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-cardb}
+      MYSQL_USER: ${DB_USER:-postgres}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - car-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: car-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    environment:
+      - DB_URL=mysql+pymysql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@mariadb:3306/${DB_NAME:-cardb}
+      - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-in-production}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - car-network
+    volumes:
+      - ./app:/app/app
+      - ./config.env:/app/config.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Next.js Frontend (опционально, можно деплоить отдельно)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: car-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      - NODE_ENV=production
+    depends_on:
+      - backend
+    networks:
+      - car-network
+
+networks:
+  car-network:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+    driver: local
+
+
+

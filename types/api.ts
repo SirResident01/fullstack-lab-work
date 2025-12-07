@@ -134,6 +134,14 @@ export interface OwnerStatistics {
   car_count: number;
 }
 
+// ==================== USER TYPES ====================
+
+export interface UserResponse {
+  id: number;
+  username: string;
+  role: string;
+}
+
 // ==================== API ERROR TYPES ====================
 
 export interface ApiError {

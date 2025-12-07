@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
@@ -11,18 +12,17 @@ interface LoginFormProps {
 
 const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) => {
   const { login, isLoading } = useAuth();
+  const { showError } = useNotification();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (!formData.username || !formData.password) {
-      setError('Пожалуйста, заполните все поля');
+      showError('Пожалуйста, заполните все поля');
       return;
     }
 
@@ -30,7 +30,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
     if (success) {
       onSuccess?.();
     } else {
-      setError('Неверное имя пользователя или пароль');
+      showError('Неверное имя пользователя или пароль');
     }
   };
 
@@ -54,12 +54,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegister }) 
       </CardHeader>
       <CardBody>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-              {error}
-            </div>
-          )}
-
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
               Имя пользователя

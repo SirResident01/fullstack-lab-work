@@ -1,0 +1,32 @@
+# Docker ignore для frontend
+
+# Backend файлы
+app/
+*.py
+requirements.txt
+run.py
+config.env
+
+# Docker
+Dockerfile.backend
+docker-compose*.yml
+
+# Python
+__pycache__
+*.pyc
+.venv
+venv
+
+# Остальное из основного .dockerignore
+node_modules
+npm-debug.log
+.next
+out
+.env.local
+.env.*.local
+coverage
+logs
+*.log
+
+
+

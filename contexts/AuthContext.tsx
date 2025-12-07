@@ -15,7 +15,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Проверяем сохраненный токен при загрузке
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
+    const savedToken = sessionStorage.getItem('auth_token');
     if (savedToken) {
       setToken(savedToken);
       // Проверяем валидность токена
@@ -50,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.access_token) {
         setToken(response.access_token);
-        localStorage.setItem('auth_token', response.access_token);
+        sessionStorage.setItem('auth_token', response.access_token);
         
         // Устанавливаем токен в API клиенте для всех последующих запросов
         apiClient.setAuthToken(response.access_token);
@@ -121,7 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
     // Очищаем токен из API клиента
     apiClient.clearAuthToken();
   };

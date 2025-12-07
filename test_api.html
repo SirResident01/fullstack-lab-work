@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Suite - Car Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background-color: white;
+        }
+        .test-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+        .test-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .endpoint {
+            font-family: monospace;
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 API Test Suite - Car Management System</h1>
+    
+    <div class="container">
+        <h2>📋 Basic Connectivity Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>Server Status</h3>
+                <button class="test-button" onclick="testServerStatus()">Test Server</button>
+                <div id="server-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>API Documentation</h3>
+                <button class="test-button" onclick="testDocs()">Test Docs</button>
+                <div id="docs-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔐 Authentication Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>User Registration</h3>
+                <button class="test-button" onclick="testRegister()">Register User</button>
+                <div id="register-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>User Login</h3>
+                <button class="test-button" onclick="testLogin()">Login User</button>
+                <div id="login-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Admin Registration</h3>
+                <button class="test-button" onclick="testAdminRegister()">Register Admin</button>
+                <div id="admin-register-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Admin Login</h3>
+                <button class="test-button" onclick="testAdminLogin()">Login Admin</button>
+                <div id="admin-login-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🛡️ Authorization Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>Unauthorized Access</h3>
+                <button class="test-button" onclick="testUnauthorized()">Test Unauthorized</button>
+                <div id="unauthorized-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Protected Endpoints</h3>
+                <button class="test-button" onclick="testProtected()">Test Protected</button>
+                <div id="protected-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Admin Endpoints</h3>
+                <button class="test-button" onclick="testAdminEndpoints()">Test Admin</button>
+                <div id="admin-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🚗 Car Management Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>Get Cars</h3>
+                <button class="test-button" onclick="testGetCars()">Get Cars</button>
+                <div id="cars-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Create Car (Admin Only)</h3>
+                <button class="test-button" onclick="testCreateCar()">Create Car</button>
+                <div id="create-car-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>👥 Owner Management Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>Get Owners</h3>
+                <button class="test-button" onclick="testGetOwners()">Get Owners</button>
+                <div id="owners-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>Create Owner (Admin Only)</h3>
+                <button class="test-button" onclick="testCreateOwner()">Create Owner</button>
+                <div id="create-owner-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Analytics Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>Analytics Overview</h3>
+                <button class="test-button" onclick="testAnalytics()">Get Analytics</button>
+                <div id="analytics-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>⚙️ System Tests</h2>
+        <div class="test-section">
+            <div class="test-item">
+                <h3>System Settings (Admin Only)</h3>
+                <button class="test-button" onclick="testSettings()">Get Settings</button>
+                <div id="settings-result" class="result" style="display: none;"></div>
+            </div>
+            <div class="test-item">
+                <h3>User Management (Admin Only)</h3>
+                <button class="test-button" onclick="testUsers()">Get Users</button>
+                <div id="users-result" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let userToken = null;
+        let adminToken = null;
+
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function makeRequest(url, method = 'GET', data = null, headers = {}) {
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...headers
+                    }
+                };
+                
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                const response = await fetch(url, options);
+                const responseData = await response.text();
+                
+                return {
+                    status: response.status,
+                    data: responseData,
+                    success: response.ok
+                };
+            } catch (error) {
+                return {
+                    status: 0,
+                    data: error.message,
+                    success: false
+                };
+            }
+        }
+
+        async function testServerStatus() {
+            showResult('server-result', 'Testing server...', 'loading');
+            const result = await makeRequest(`${API_BASE}/`);
+            
+            if (result.success) {
+                showResult('server-result', '✅ Server is running', 'success');
+            } else {
+                showResult('server-result', `❌ Server error: ${result.status}`, 'error');
+            }
+        }
+
+        async function testDocs() {
+            showResult('docs-result', 'Testing docs...', 'loading');
+            const result = await makeRequest(`${API_BASE}/docs`);
+            
+            if (result.success) {
+                showResult('docs-result', '✅ API docs accessible', 'success');
+            } else {
+                showResult('docs-result', `❌ Docs error: ${result.status}`, 'error');
+            }
+        }
+
+        async function testRegister() {
+            showResult('register-result', 'Registering user...', 'loading');
+            const data = {
+                username: 'testuser_html',
+                email: 'testuser_html@example.com',
+                password: 'testpassword123',
+                role: 'USER'
+            };
+            
+            const result = await makeRequest(`${API_BASE}/register`, 'POST', data);
+            
+            if (result.success) {
+                showResult('register-result', '✅ User registered successfully', 'success');
+            } else {
+                showResult('register-result', `❌ Registration failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            showResult('login-result', 'Logging in user...', 'loading');
+            const data = {
+                username: 'testuser_html',
+                password: 'testpassword123'
+            };
+            
+            const result = await makeRequest(`${API_BASE}/login`, 'POST', data);
+            
+            if (result.success) {
+                try {
+                    const responseData = JSON.parse(result.data);
+                    if (responseData.access_token) {
+                        userToken = responseData.access_token;
+                        showResult('login-result', '✅ User logged in successfully', 'success');
+                    } else {
+                        showResult('login-result', '❌ No access token in response', 'error');
+                    }
+                } catch (e) {
+                    showResult('login-result', '❌ Invalid JSON response', 'error');
+                }
+            } else {
+                showResult('login-result', `❌ Login failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testAdminRegister() {
+            showResult('admin-register-result', 'Registering admin...', 'loading');
+            const data = {
+                username: 'testadmin_html',
+                email: 'testadmin_html@example.com',
+                password: 'adminpassword123',
+                role: 'ADMIN'
+            };
+            
+            const result = await makeRequest(`${API_BASE}/register`, 'POST', data);
+            
+            if (result.success) {
+                showResult('admin-register-result', '✅ Admin registered successfully', 'success');
+            } else {
+                showResult('admin-register-result', `❌ Admin registration failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testAdminLogin() {
+            showResult('admin-login-result', 'Logging in admin...', 'loading');
+            const data = {
+                username: 'testadmin_html',
+                password: 'adminpassword123'
+            };
+            
+            const result = await makeRequest(`${API_BASE}/login`, 'POST', data);
+            
+            if (result.success) {
+                try {
+                    const responseData = JSON.parse(result.data);
+                    if (responseData.access_token) {
+                        adminToken = responseData.access_token;
+                        showResult('admin-login-result', '✅ Admin logged in successfully', 'success');
+                    } else {
+                        showResult('admin-login-result', '❌ No access token in response', 'error');
+                    }
+                } catch (e) {
+                    showResult('admin-login-result', '❌ Invalid JSON response', 'error');
+                }
+            } else {
+                showResult('admin-login-result', `❌ Admin login failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testUnauthorized() {
+            showResult('unauthorized-result', 'Testing unauthorized access...', 'loading');
+            const result = await makeRequest(`${API_BASE}/cars`);
+            
+            if (result.status === 401) {
+                showResult('unauthorized-result', '✅ Unauthorized access correctly blocked', 'success');
+            } else {
+                showResult('unauthorized-result', `❌ Should return 401, got ${result.status}`, 'error');
+            }
+        }
+
+        async function testProtected() {
+            if (!userToken) {
+                showResult('protected-result', '❌ No user token available. Please login first.', 'error');
+                return;
+            }
+            
+            showResult('protected-result', 'Testing protected endpoint...', 'loading');
+            const result = await makeRequest(`${API_BASE}/cars`, 'GET', null, {
+                'Authorization': `Bearer ${userToken}`
+            });
+            
+            if (result.success) {
+                showResult('protected-result', '✅ Protected endpoint accessible with token', 'success');
+            } else {
+                showResult('protected-result', `❌ Protected endpoint failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testAdminEndpoints() {
+            showResult('admin-result', 'Testing admin endpoints...', 'loading');
+            const result = await makeRequest(`${API_BASE}/admin/users`);
+            
+            if (result.status === 401) {
+                showResult('admin-result', '✅ Admin endpoints correctly require authentication', 'success');
+            } else {
+                showResult('admin-result', `❌ Admin endpoints should return 401, got ${result.status}`, 'error');
+            }
+        }
+
+        async function testGetCars() {
+            if (!userToken) {
+                showResult('cars-result', '❌ No user token available. Please login first.', 'error');
+                return;
+            }
+            
+            showResult('cars-result', 'Getting cars...', 'loading');
+            const result = await makeRequest(`${API_BASE}/cars`, 'GET', null, {
+                'Authorization': `Bearer ${userToken}`
+            });
+            
+            if (result.success) {
+                showResult('cars-result', '✅ Cars retrieved successfully', 'success');
+            } else {
+                showResult('cars-result', `❌ Get cars failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testCreateCar() {
+            if (!adminToken) {
+                showResult('create-car-result', '❌ No admin token available. Please login as admin first.', 'error');
+                return;
+            }
+            
+            showResult('create-car-result', 'Creating car...', 'loading');
+            const data = {
+                brand: 'Test Brand',
+                model: 'Test Model',
+                year: 2023,
+                price: 50000,
+                owner_id: 1
+            };
+            
+            const result = await makeRequest(`${API_BASE}/cars`, 'POST', data, {
+                'Authorization': `Bearer ${adminToken}`
+            });
+            
+            if (result.success) {
+                showResult('create-car-result', '✅ Car created successfully', 'success');
+            } else {
+                showResult('create-car-result', `❌ Create car failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testGetOwners() {
+            if (!userToken) {
+                showResult('owners-result', '❌ No user token available. Please login first.', 'error');
+                return;
+            }
+            
+            showResult('owners-result', 'Getting owners...', 'loading');
+            const result = await makeRequest(`${API_BASE}/owners`, 'GET', null, {
+                'Authorization': `Bearer ${userToken}`
+            });
+            
+            if (result.success) {
+                showResult('owners-result', '✅ Owners retrieved successfully', 'success');
+            } else {
+                showResult('owners-result', `❌ Get owners failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testCreateOwner() {
+            if (!adminToken) {
+                showResult('create-owner-result', '❌ No admin token available. Please login as admin first.', 'error');
+                return;
+            }
+            
+            showResult('create-owner-result', 'Creating owner...', 'loading');
+            const data = {
+                firstname: 'Test',
+                lastname: 'Owner',
+                email: 'testowner@example.com',
+                phone: '+1234567890'
+            };
+            
+            const result = await makeRequest(`${API_BASE}/owners`, 'POST', data, {
+                'Authorization': `Bearer ${adminToken}`
+            });
+            
+            if (result.success) {
+                showResult('create-owner-result', '✅ Owner created successfully', 'success');
+            } else {
+                showResult('create-owner-result', `❌ Create owner failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testAnalytics() {
+            if (!userToken) {
+                showResult('analytics-result', '❌ No user token available. Please login first.', 'error');
+                return;
+            }
+            
+            showResult('analytics-result', 'Getting analytics...', 'loading');
+            const result = await makeRequest(`${API_BASE}/analytics/overview`, 'GET', null, {
+                'Authorization': `Bearer ${userToken}`
+            });
+            
+            if (result.success) {
+                showResult('analytics-result', '✅ Analytics retrieved successfully', 'success');
+            } else {
+                showResult('analytics-result', `❌ Get analytics failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testSettings() {
+            if (!adminToken) {
+                showResult('settings-result', '❌ No admin token available. Please login as admin first.', 'error');
+                return;
+            }
+            
+            showResult('settings-result', 'Getting settings...', 'loading');
+            const result = await makeRequest(`${API_BASE}/settings`, 'GET', null, {
+                'Authorization': `Bearer ${adminToken}`
+            });
+            
+            if (result.success) {
+                showResult('settings-result', '✅ Settings retrieved successfully', 'success');
+            } else {
+                showResult('settings-result', `❌ Get settings failed: ${result.status}`, 'error');
+            }
+        }
+
+        async function testUsers() {
+            if (!adminToken) {
+                showResult('users-result', '❌ No admin token available. Please login as admin first.', 'error');
+                return;
+            }
+            
+            showResult('users-result', 'Getting users...', 'loading');
+            const result = await makeRequest(`${API_BASE}/admin/users`, 'GET', null, {
+                'Authorization': `Bearer ${adminToken}`
+            });
+            
+            if (result.success) {
+                showResult('users-result', '✅ Users retrieved successfully', 'success');
+            } else {
+                showResult('users-result', `❌ Get users failed: ${result.status}`, 'error');
+            }
+        }
+
+        // Auto-test on page load
+        window.onload = function() {
+            console.log('API Test Suite loaded. Make sure the server is running on http://localhost:8000');
+        };
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

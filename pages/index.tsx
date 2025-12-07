@@ -202,7 +202,7 @@ export default function HomePage() {
                 ) : carStatsError ? (
                   <div className="text-center py-8">
                     <div className="text-red-600 mb-2">Ошибка загрузки статистики</div>
-                    <div className="text-sm text-gray-500">{carStatsError.message}</div>
+                    <div className="text-sm text-gray-500">{carStatsError instanceof Error ? carStatsError.message : String(carStatsError)}</div>
                   </div>
                 ) : carStats ? (
                   <div className="space-y-4">
@@ -222,12 +222,12 @@ export default function HomePage() {
                       </div>
                       <div className="text-sm text-yellow-600">Средняя цена</div>
                     </div>
-                    {carStats.most_expensive_car && (
+                    {carStats.most_expensive && (
                       <div className="p-4 bg-gray-50 rounded-lg">
                         <div className="text-sm font-medium text-gray-700 mb-1">Самый дорогой:</div>
                         <div className="text-sm text-gray-600">
-                          {carStats.most_expensive_car.brand} {carStats.most_expensive_car.model} - 
-                          {new Intl.NumberFormat('ru-RU').format(carStats.most_expensive_car.price)} ₸
+                          {carStats.most_expensive.brand} {carStats.most_expensive.model} - 
+                          {new Intl.NumberFormat('ru-RU').format(carStats.most_expensive.price)} ₸
                         </div>
                       </div>
                     )}
@@ -256,9 +256,9 @@ export default function HomePage() {
                 ) : ownerStatsError ? (
                   <div className="text-center py-8">
                     <div className="text-red-600 mb-2">Ошибка загрузки статистики</div>
-                    <div className="text-sm text-gray-500">{ownerStatsError.message}</div>
+                    <div className="text-sm text-gray-500">{ownerStatsError instanceof Error ? ownerStatsError.message : String(ownerStatsError)}</div>
                   </div>
-                ) : ownerStats.length > 0 ? (
+                ) : ownerStats && ownerStats.length > 0 ? (
                   <div className="space-y-3">
                     {ownerStats.slice(0, 5).map((owner) => (
                       <div key={owner.ownerid} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">

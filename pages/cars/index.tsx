@@ -5,7 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 // Иконки заменены на эмодзи
 import { apiClient } from '@/lib/api';
-import { CarWithOwner, CarCreate, CarUpdate, OwnerResponse } from '@/types/api';
+import { CarWithOwner, CarCreate, CarUpdate, OwnerResponse, CarQuery } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
 import { useSearchState } from '@/hooks/useSearchState';
 import { useDataRefresh } from '@/hooks/useDataRefresh';
@@ -34,23 +34,27 @@ export default function CarsPage() {
   const [searchQuery, setSearchQuery] = useSearchState('carsSearchState');
 
   // Fetch cars
-  const { data: cars = [], isLoading: carsLoading, error: carsError } = useQuery(
+  const {
+    data: cars = [],
+    isLoading: carsLoading,
+    error: carsError,
+  } = useQuery<CarWithOwner[]>(
     ['cars', searchQuery],
     () => apiClient.searchCars(searchQuery),
     {
       keepPreviousData: true,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000,
     }
   );
 
   // Fetch owners for form
-  const { data: owners = [] } = useQuery(
+  const { data: owners = [] } = useQuery<OwnerResponse[]>(
     'owners',
     () => apiClient.getOwners(0, 1000),
     {
-      staleTime: 10 * 60 * 1000, // 10 minutes
-      cacheTime: 30 * 60 * 1000, // 30 minutes
+      staleTime: 10 * 60 * 1000,
+      cacheTime: 30 * 60 * 1000,
     }
   );
 
@@ -67,7 +71,8 @@ export default function CarsPage() {
 
   // Update car mutation
   const updateCarMutation = useMutation(
-    ({ id, data }: { id: number; data: CarUpdate }) => apiClient.updateCar(id, data),
+    ({ id, data }: { id: number; data: CarUpdate }) =>
+      apiClient.updateCar(id, data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries('cars');
@@ -87,12 +92,12 @@ export default function CarsPage() {
     }
   );
 
-  const handleSearch = (query: any) => {
+  const handleSearch = (query: CarQuery) => {
     setSearchQuery({ ...searchQuery, ...query });
   };
 
-  const handleCreateCar = async (carData: CarCreate) => {
-    await createCarMutation.mutateAsync(carData);
+  const handleCreateCar = async (carData: CarCreate | CarUpdate) => {
+    await createCarMutation.mutateAsync(carData as CarCreate);
   };
 
   const handleUpdateCar = async (carData: CarUpdate) => {

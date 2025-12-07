@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { apiClient } from '@/lib/api';
 import { UserResponse } from '@/types/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Modal from '@/components/ui/Modal';
@@ -20,24 +21,21 @@ interface UserFormProps {
 
 const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit, user, loading }) => {
   const [username, setUsername] = useState(user?.username || '');
-  const [email, setEmail] = useState(user?.email || '');
   const [role, setRole] = useState(user?.role || 'USER');
 
   React.useEffect(() => {
     if (user) {
       setUsername(user.username);
-      setEmail(user.email);
       setRole(user.role);
     } else {
       setUsername('');
-      setEmail('');
       setRole('USER');
     }
   }, [user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ username, email, role });
+    onSubmit({ username, role });
   };
 
   return (
@@ -50,17 +48,6 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit, user, lo
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             required
           />
@@ -92,6 +79,7 @@ const UserForm: React.FC<UserFormProps> = ({ isOpen, onClose, onSubmit, user, lo
 const UserManagementPage: React.FC = () => {
   const router = useRouter();
   const { isAuthenticated, isAdmin } = useAuth();
+  const { showError } = useNotification();
   const queryClient = useQueryClient();
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
   const [deletingUser, setDeletingUser] = useState<UserResponse | null>(null);
@@ -111,10 +99,11 @@ const UserManagementPage: React.FC = () => {
     () => apiClient.getAllUsers(),
     {
       enabled: isAdmin, // Only fetch if admin
-      onError: (err) => {
+      onError: (err: unknown) => {
         console.error('Ошибка загрузки пользователей:', err);
-        if (err.message.includes('403')) {
-          alert('У вас нет прав для просмотра пользователей.');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.includes('403')) {
+          showError('У вас нет прав для просмотра пользователей.');
           router.push('/');
         }
       }
@@ -131,9 +120,9 @@ const UserManagementPage: React.FC = () => {
       onError: (err: any) => {
         console.error('Ошибка обновления пользователя:', err);
         if (err.response?.status === 403) {
-          alert('У вас нет прав для редактирования пользователей.');
+          showError('У вас нет прав для редактирования пользователей.');
         } else {
-          alert('Произошла ошибка при обновлении пользователя.');
+          showError('Произошла ошибка при обновлении пользователя.');
         }
       },
     }
@@ -149,9 +138,9 @@ const UserManagementPage: React.FC = () => {
       onError: (err: any) => {
         console.error('Ошибка удаления пользователя:', err);
         if (err.response?.status === 403) {
-          alert('У вас нет прав для удаления пользователей.');
+          showError('У вас нет прав для удаления пользователей.');
         } else {
-          alert('Произошла ошибка при удалении пользователя.');
+          showError('Произошла ошибка при удалении пользователя.');
         }
       },
     }
@@ -190,15 +179,15 @@ const UserManagementPage: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : error ? (
-          <div className="text-red-600">Ошибка: {error.message}</div>
+          <div className="text-red-600">Ошибка: {error instanceof Error ? error.message : String(error)}</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {users?.map((u) => (
               <Card key={u.id} className="flex justify-between items-center p-4">
                 <div>
                   <h2 className="text-lg font-semibold">{u.username}</h2>
-                  <p className="text-sm text-gray-600">{u.email}</p>
                   <p className="text-xs text-gray-500">Роль: {u.role}</p>
+                  <p className="text-xs text-gray-400">ID: {u.id}</p>
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={() => setEditingUser(u)}>
@@ -230,7 +219,7 @@ const UserManagementPage: React.FC = () => {
             // For creation, we need to call registerAdmin or register based on role
             // This form is for updating existing users, so we'll simplify for now
             // A separate form for creation might be better, or add password field
-            alert('Создание пользователя через эту форму пока не реализовано. Используйте /register или /register-admin.');
+            showError('Создание пользователя через эту форму пока не реализовано. Используйте /register или /register-admin.');
             setShowCreateForm(false);
           }}
           loading={false} // No actual creation mutation here

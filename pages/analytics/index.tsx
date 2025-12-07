@@ -58,7 +58,7 @@ const AnalyticsPage: React.FC = () => {
             {isLoadingOverview ? (
               <LoadingSpinner />
             ) : errorOverview ? (
-              <div className="text-red-600">Ошибка: {errorOverview.message}</div>
+              <div className="text-red-600">Ошибка: {errorOverview instanceof Error ? errorOverview.message : String(errorOverview)}</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-md bg-blue-50">
@@ -87,7 +87,7 @@ const AnalyticsPage: React.FC = () => {
             {isLoadingCarsByYear ? (
               <LoadingSpinner />
             ) : errorCarsByYear ? (
-              <div className="text-red-600">Ошибка: {errorCarsByYear.message}</div>
+              <div className="text-red-600">Ошибка: {errorCarsByYear instanceof Error ? errorCarsByYear.message : String(errorCarsByYear)}</div>
             ) : (
               <ul className="list-disc list-inside">
                 {carsByYear?.map((item) => (
@@ -107,7 +107,7 @@ const AnalyticsPage: React.FC = () => {
             {isLoadingOwnersStats ? (
               <LoadingSpinner />
             ) : errorOwnersStats ? (
-              <div className="text-red-600">Ошибка: {errorOwnersStats.message}</div>
+              <div className="text-red-600">Ошибка: {errorOwnersStats instanceof Error ? errorOwnersStats.message : String(errorOwnersStats)}</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-md bg-yellow-50">

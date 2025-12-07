@@ -13,6 +13,7 @@ import {
   MessageResponse,
   CarStatistics,
   OwnerStatistics,
+  UserResponse,
 } from '@/types/api';
 import { User, LoginRequest, RegisterRequest, LoginResponse } from '@/types/auth';
 
@@ -67,7 +68,7 @@ class ApiClient {
 
   // ==================== CAR ENDPOINTS ====================
 
-  async getCars(skip = 0, limit = 100): Promise<CarWithOwner[]> {
+  async getCars(skip: number = 0, limit: number = 100): Promise<CarWithOwner[]> {
     const response = await this.client.get('/cars', {
       params: { skip, limit },
     });
@@ -135,7 +136,7 @@ class ApiClient {
 
   // ==================== OWNER ENDPOINTS ====================
 
-  async getOwners(skip = 0, limit = 100): Promise<OwnerResponse[]> {
+  async getOwners(skip: number = 0, limit: number = 100): Promise<OwnerResponse[]> {
     const response = await this.client.get('/owners', {
       params: { skip, limit },
     });
@@ -225,7 +226,7 @@ class ApiClient {
 
   // ==================== USER MANAGEMENT ENDPOINTS ====================
 
-  async getAllUsers(skip = 0, limit = 100): Promise<UserResponse[]> {
+  async getAllUsers(skip: number = 0, limit: number = 100): Promise<UserResponse[]> {
     const response = await this.client.get('/admin/users', {
       params: { skip, limit },
     });

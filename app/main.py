@@ -19,7 +19,7 @@ from .schemas import (
     StatusResponse, MessageResponse, UserLogin, UserRegister, Token, UserResponse
 )
 from .crud import CarCRUD, OwnerCRUD
-from .models import AppUser
+from .models import AppUser, Car, Owner
 
 # Load config
 load_dotenv("config.env")
@@ -123,6 +123,11 @@ async def on_startup():
     log.info("🚀 Application started")
 
 # ==================== BASIC ENDPOINTS ====================
+
+@app.get("/")
+def root():
+    """Root endpoint"""
+    return {"message": "Car Management API", "status": "running", "version": APP_VERSION}
 
 @app.get("/hello")
 def hello():

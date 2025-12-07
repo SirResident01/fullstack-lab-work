@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { CarCreate, CarUpdate, CarWithOwner, OwnerResponse } from '@/types/api';
-// Иконки заменены на эмодзи
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  MenuItem,
+  Stack,
+  CircularProgress,
+} from '@mui/material';
 
 interface CarFormProps {
   isOpen: boolean;
@@ -87,116 +94,126 @@ const CarForm: React.FC<CarFormProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={isEdit ? 'Редактировать автомобиль' : 'Добавить автомобиль'}
-      size="lg"
-    >
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Марка"
-            placeholder="Введите марку автомобиля"
-            leftIcon={<span className="text-sm">🚗</span>}
-            {...register('brand', { 
-              required: 'Марка обязательна',
-              minLength: { value: 1, message: 'Минимум 1 символ' },
-              maxLength: { value: 100, message: 'Максимум 100 символов' }
-            })}
-            error={errors.brand?.message}
-          />
+    <Dialog open={isOpen} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        {isEdit ? 'Редактировать автомобиль' : 'Добавить автомобиль'}
+      </DialogTitle>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Марка"
+                placeholder="Введите марку автомобиля"
+                fullWidth
+                {...register('brand', { 
+                  required: 'Марка обязательна',
+                  minLength: { value: 1, message: 'Минимум 1 символ' },
+                  maxLength: { value: 100, message: 'Максимум 100 символов' }
+                })}
+                error={!!errors.brand}
+                helperText={errors.brand?.message}
+              />
 
-          <Input
-            label="Модель"
-            placeholder="Введите модель автомобиля"
-            leftIcon={<span className="text-sm">🚗</span>}
-            {...register('model', { 
-              required: 'Модель обязательна',
-              minLength: { value: 1, message: 'Минимум 1 символ' },
-              maxLength: { value: 100, message: 'Максимум 100 символов' }
-            })}
-            error={errors.model?.message}
-          />
+              <TextField
+                label="Модель"
+                placeholder="Введите модель автомобиля"
+                fullWidth
+                {...register('model', { 
+                  required: 'Модель обязательна',
+                  minLength: { value: 1, message: 'Минимум 1 символ' },
+                  maxLength: { value: 100, message: 'Максимум 100 символов' }
+                })}
+                error={!!errors.model}
+                helperText={errors.model?.message}
+              />
+            </Stack>
 
-          <Input
-            label="Цвет"
-            placeholder="Введите цвет автомобиля"
-            leftIcon={<span className="text-sm">🎨</span>}
-            {...register('color', { 
-              required: 'Цвет обязателен',
-              minLength: { value: 1, message: 'Минимум 1 символ' },
-              maxLength: { value: 40, message: 'Максимум 40 символов' }
-            })}
-            error={errors.color?.message}
-          />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Цвет"
+                placeholder="Введите цвет автомобиля"
+                fullWidth
+                {...register('color', { 
+                  required: 'Цвет обязателен',
+                  minLength: { value: 1, message: 'Минимум 1 символ' },
+                  maxLength: { value: 40, message: 'Максимум 40 символов' }
+                })}
+                error={!!errors.color}
+                helperText={errors.color?.message}
+              />
 
-          <Input
-            label="Регистрационный номер"
-            placeholder="Введите номер"
-            leftIcon={<span className="text-sm">🔢</span>}
-            {...register('registrationNumber', { 
-              required: 'Номер обязателен',
-              minLength: { value: 1, message: 'Минимум 1 символ' },
-              maxLength: { value: 40, message: 'Максимум 40 символов' }
-            })}
-            error={errors.registrationNumber?.message}
-          />
+              <TextField
+                label="Регистрационный номер"
+                placeholder="Введите номер"
+                fullWidth
+                {...register('registrationNumber', { 
+                  required: 'Номер обязателен',
+                  minLength: { value: 1, message: 'Минимум 1 символ' },
+                  maxLength: { value: 40, message: 'Максимум 40 символов' }
+                })}
+                error={!!errors.registrationNumber}
+                helperText={errors.registrationNumber?.message}
+              />
+            </Stack>
 
-          <Input
-            label="Год выпуска"
-            type="number"
-            placeholder="Год выпуска"
-            leftIcon={<span className="text-sm">📅</span>}
-            {...register('modelYear', { 
-              required: 'Год обязателен',
-              min: { value: 1900, message: 'Минимум 1900 год' },
-              max: { value: 2030, message: 'Максимум 2030 год' }
-            })}
-            error={errors.modelYear?.message}
-          />
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Год выпуска"
+                type="number"
+                placeholder="Год выпуска"
+                fullWidth
+                {...register('modelYear', { 
+                  required: 'Год обязателен',
+                  min: { value: 1900, message: 'Минимум 1900 год' },
+                  max: { value: 2030, message: 'Максимум 2030 год' },
+                  valueAsNumber: true
+                })}
+                error={!!errors.modelYear}
+                helperText={errors.modelYear?.message}
+              />
 
-          <Input
-            label="Цена (тенге)"
-            type="number"
-            placeholder="Цена в тенге"
-            leftIcon={<span className="text-sm">💰</span>}
-            {...register('price', { 
-              required: 'Цена обязательна',
-              min: { value: 0, message: 'Цена не может быть отрицательной' },
-              valueAsNumber: true
-            })}
-            error={errors.price?.message}
-          />
-        </div>
+              <TextField
+                label="Цена (тенге)"
+                type="number"
+                placeholder="Цена в тенге"
+                fullWidth
+                {...register('price', { 
+                  required: 'Цена обязательна',
+                  min: { value: 0, message: 'Цена не может быть отрицательной' },
+                  valueAsNumber: true
+                })}
+                error={!!errors.price}
+                helperText={errors.price?.message}
+              />
+            </Stack>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Владелец
-          </label>
-          <select
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            {...register('owner_id', { 
-              required: 'Владелец обязателен',
-              valueAsNumber: true
-            })}
-          >
-            <option value="">Выберите владельца</option>
-            {owners.map((owner) => (
-              <option key={owner.ownerid} value={owner.ownerid}>
-                {owner.firstname} {owner.lastname}
-              </option>
-            ))}
-          </select>
-          {errors.owner_id && (
-            <p className="mt-1 text-sm text-red-600">{errors.owner_id.message}</p>
-          )}
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-4">
+            <TextField
+              label="Владелец"
+              select
+              fullWidth
+              {...register('owner_id', { 
+                required: 'Владелец обязателен',
+                valueAsNumber: true
+              })}
+              error={!!errors.owner_id}
+              helperText={errors.owner_id?.message}
+            >
+              <MenuItem value="">
+                <em>Выберите владельца</em>
+              </MenuItem>
+              {owners.map((owner) => (
+                <MenuItem key={owner.ownerid} value={owner.ownerid}>
+                  {owner.firstname} {owner.lastname}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
           <Button
             type="button"
-            variant="outline"
+            variant="outlined"
             onClick={handleClose}
             disabled={isSubmitting}
           >
@@ -204,14 +221,15 @@ const CarForm: React.FC<CarFormProps> = ({
           </Button>
           <Button
             type="submit"
-            loading={isSubmitting}
-            disabled={loading}
+            variant="contained"
+            disabled={loading || isSubmitting}
+            startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
           >
             {isEdit ? 'Сохранить' : 'Добавить'}
           </Button>
-        </div>
+        </DialogActions>
       </form>
-    </Modal>
+    </Dialog>
   );
 };
 

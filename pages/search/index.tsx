@@ -148,7 +148,7 @@ export default function SearchPage() {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-3">
                             <div className="p-2 bg-primary-100 rounded-lg">
-                              <Car className="h-5 w-5 text-primary-600" />
+                              <span className="text-xl">🚗</span>
                             </div>
                             <div>
                               <h3 className="text-lg font-semibold text-gray-900">
@@ -204,7 +204,7 @@ export default function SearchPage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center space-x-2">
-                    <Filter className="h-5 w-5 text-blue-600" />
+                    <span className="text-xl text-blue-600">🔧</span>
                     <h3 className="text-lg font-semibold text-gray-900">Фильтры</h3>
                   </div>
                 </CardHeader>
@@ -219,7 +219,7 @@ export default function SearchPage() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center space-x-2">
-                    <BarChart3 className="h-5 w-5 text-green-600" />
+                    <span className="text-xl text-green-600">📊</span>
                     <h3 className="text-lg font-semibold text-gray-900">Сортировка</h3>
                   </div>
                 </CardHeader>

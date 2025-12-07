@@ -82,24 +82,28 @@ const OwnerCard: React.FC<OwnerCardProps> = ({
         </div>
 
         {/* КНОПКИ ПОЛНОСТЬЮ УБРАНЫ - НЕ ПОКАЗЫВАЮТСЯ НИКОГДА */}
-        {false && (
+        {showActions && (onEdit || onDelete) && (
           <div className="flex space-x-2 ml-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(owner)}
-              className="p-2"
-            >
-              ✏️
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => onDelete(owner)}
-              className="p-2"
-            >
-              🗑️
-            </Button>
+            {onEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(owner)}
+                className="p-2"
+              >
+                ✏️
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => onDelete(owner)}
+                className="p-2"
+              >
+                🗑️
+              </Button>
+            )}
           </div>
         )}
         

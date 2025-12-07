@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -10,6 +10,7 @@ import { getInitials } from '@/lib/utils';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { useDataRefresh } from '@/hooks/useDataRefresh';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { CardHeader, CardBody } from '@/components/ui/Card';
@@ -18,14 +19,37 @@ import OwnerForm from '@/components/owners/OwnerForm';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import { GetServerSideProps } from 'next';
+
+// Отключаем статическую генерацию для этой страницы
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};
 
 export default function OwnersPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { isAdmin, user, isAuthenticated } = useAuth();
+  const { isAdmin, user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { showError } = useNotification();
+  
+  // Все хуки должны быть вызваны до любых условных возвратов
+  useDataRefresh();
+  const [showForm, setShowForm] = useState(false);
+  const [editingOwner, setEditingOwner] = useState<OwnerResponse | null>(null);
+  const [deletingOwner, setDeletingOwner] = useState<OwnerResponse | null>(null);
+  const [searchTerm, setSearchTerm] = usePersistedState('ownersSearchTerm', '');
   
   // ПРИНУДИТЕЛЬНО СКРЫВАЕМ КНОПКИ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ КРОМЕ ADMIN
   const isReallyAdmin = isAuthenticated && user?.role === 'ADMIN';
+  
+  // Перенаправление на клиенте через useEffect
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
   
   // ПРИНУДИТЕЛЬНАЯ ПРОВЕРКА - ЕСЛИ НЕ АВТОРИЗОВАН, ТО НЕ АДМИН
   if (!isAuthenticated) {
@@ -54,17 +78,14 @@ export default function OwnersPage() {
     });
   }
   
-  // Если пользователь не авторизован, перенаправляем на страницу входа
-  if (!isAuthenticated) {
-    router.push('/login');
-    return null;
+  // Показываем загрузку во время проверки авторизации или если не авторизован
+  if (authLoading || !isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
-  useDataRefresh();
-  
-  const [showForm, setShowForm] = useState(false);
-  const [editingOwner, setEditingOwner] = useState<OwnerResponse | null>(null);
-  const [deletingOwner, setDeletingOwner] = useState<OwnerResponse | null>(null);
-  const [searchTerm, setSearchTerm] = usePersistedState('ownersSearchTerm', '');
 
   // Fetch owners
   const { data: owners = [], isLoading: ownersLoading, error: ownersError } = useQuery(
@@ -90,7 +111,7 @@ export default function OwnersPage() {
       onError: (error: any) => {
         console.error('Ошибка создания владельца:', error);
         if (error.response?.status === 403) {
-          alert('У вас нет прав для создания владельцев');
+          showError('У вас нет прав для создания владельцев');
         }
       },
     }
@@ -107,7 +128,7 @@ export default function OwnersPage() {
       onError: (error: any) => {
         console.error('Ошибка обновления владельца:', error);
         if (error.response?.status === 403) {
-          alert('У вас нет прав для редактирования владельцев');
+          showError('У вас нет прав для редактирования владельцев');
         }
       },
     }
@@ -124,17 +145,24 @@ export default function OwnersPage() {
       onError: (error: any) => {
         console.error('Ошибка удаления владельца:', error);
         if (error.response?.status === 403) {
-          alert('У вас нет прав для удаления владельцев');
+          showError('У вас нет прав для удаления владельцев');
         }
       },
     }
   );
 
-  const handleCreateOwner = async (ownerData: OwnerCreate) => {
-    await createOwnerMutation.mutateAsync(ownerData);
+  const handleCreateOwner = async (ownerData: OwnerCreate | OwnerUpdate) => {
+    // При создании все поля обязательны
+    if (!ownerData.firstname || !ownerData.lastname) {
+      throw new Error('Все поля обязательны для заполнения');
+    }
+    await createOwnerMutation.mutateAsync({
+      firstname: ownerData.firstname,
+      lastname: ownerData.lastname,
+    });
   };
 
-  const handleUpdateOwner = async (ownerData: OwnerUpdate) => {
+  const handleUpdateOwner = async (ownerData: OwnerCreate | OwnerUpdate) => {
     if (editingOwner) {
       await updateOwnerMutation.mutateAsync({ id: editingOwner.ownerid, data: ownerData });
     }

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotification } from '@/contexts/NotificationContext';
 import Button from '@/components/ui/Button';
 import Card, { CardHeader, CardBody } from '@/components/ui/Card';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -11,6 +12,7 @@ import { useRouter } from 'next/router';
 const SystemSettingsPage: React.FC = () => {
   const router = useRouter();
   const { isAuthenticated, isAdmin } = useAuth();
+  const { showError, showSuccess } = useNotification();
   const queryClient = useQueryClient();
 
   const [appName, setAppName] = useState('');
@@ -36,10 +38,11 @@ const SystemSettingsPage: React.FC = () => {
         setAdminEmail(data.admin_email || '');
         setMaintenanceMode(data.maintenance_mode || false);
       },
-      onError: (err) => {
+      onError: (err: unknown) => {
         console.error('Ошибка загрузки настроек системы:', err);
-        if (err.message.includes('403')) {
-          alert('У вас нет прав для просмотра настроек системы.');
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.includes('403')) {
+          showError('У вас нет прав для просмотра настроек системы.');
           router.push('/');
         }
       }
@@ -51,14 +54,14 @@ const SystemSettingsPage: React.FC = () => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('systemSettings');
-        alert('Настройки успешно обновлены!');
+        showSuccess('Настройки успешно обновлены!');
       },
       onError: (err: any) => {
         console.error('Ошибка обновления настроек системы:', err);
         if (err.response?.status === 403) {
-          alert('У вас нет прав для изменения настроек системы.');
+          showError('У вас нет прав для изменения настроек системы.');
         } else {
-          alert('Произошла ошибка при обновлении настроек.');
+          showError('Произошла ошибка при обновлении настроек.');
         }
       },
     }
@@ -95,7 +98,7 @@ const SystemSettingsPage: React.FC = () => {
         {isLoading ? (
           <LoadingSpinner />
         ) : error ? (
-          <div className="text-red-600">Ошибка: {error.message}</div>
+          <div className="text-red-600">Ошибка: {error instanceof Error ? error.message : String(error)}</div>
         ) : (
           <Card className="mb-6">
             <CardHeader>
@@ -154,7 +157,7 @@ const SystemSettingsPage: React.FC = () => {
             {isLoadingHealth ? (
               <LoadingSpinner />
             ) : errorHealth ? (
-              <div className="text-red-600">Ошибка: {errorHealth.message}</div>
+              <div className="text-red-600">Ошибка: {errorHealth instanceof Error ? errorHealth.message : String(errorHealth)}</div>
             ) : (
               <p className="text-gray-700">Статус: {health?.message}</p>
             )}

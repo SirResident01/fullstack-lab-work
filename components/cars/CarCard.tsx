@@ -1,9 +1,18 @@
 import React from 'react';
 import { CarWithOwner } from '@/types/api';
 import { formatPrice } from '@/lib/utils';
-// Иконки заменены на эмодзи
-import Button from '@/components/ui/Button';
-import Badge from '@/components/ui/Badge';
+import {
+  IconButton,
+  Tooltip,
+  Chip,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Stack,
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface CarCardProps {
   car: CarWithOwner;
@@ -19,71 +28,67 @@ const CarCard: React.FC<CarCardProps> = ({
   showActions = true,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center space-x-3 mb-3">
-            <div className="p-2 bg-primary-100 rounded-lg">
-              <span className="text-2xl">🚗</span>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
+    <Card sx={{ height: '100%', '&:hover': { boxShadow: 4 } }}>
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+          <Box flex={1}>
+            <Stack direction="row" spacing={2} alignItems="center" mb={2}>
+              <Typography variant="h6" component="h3" fontWeight="bold">
                 {car.brand} {car.model}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {car.registrationNumber}
-              </p>
-            </div>
-          </div>
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              {car.registrationNumber}
+            </Typography>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm">📅</span>
-              <span className="text-sm text-gray-600">{car.modelYear}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm">💰</span>
-              <span className="text-sm font-medium text-gray-900">
-                {formatPrice(car.price)}
-              </span>
-            </div>
-          </div>
+            <Stack direction="row" spacing={2} mb={2}>
+              <Typography variant="body2" color="text.secondary">
+                Год: {car.modelYear}
+              </Typography>
+              <Typography variant="body2" fontWeight="medium">
+                Цена: {formatPrice(car.price)}
+              </Typography>
+            </Stack>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm">👤</span>
-              <span className="text-sm text-gray-600">
-                {car.owner || 'Не назначен'}
-              </span>
-            </div>
-            <Badge variant="primary" size="sm">
-              {car.color}
-            </Badge>
-          </div>
-        </div>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Владелец: {car.owner || 'Не назначен'}
+              </Typography>
+              <Chip label={car.color} size="small" color="primary" variant="outlined" />
+            </Stack>
+          </Box>
 
-        {showActions && onEdit && onDelete && (
-          <div className="flex space-x-2 ml-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(car)}
-              className="p-2"
-            >
-              ✏️
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => onDelete(car)}
-              className="p-2"
-            >
-              🗑️
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          {showActions && (onEdit || onDelete) && (
+            <Stack direction="row" spacing={1} ml={2}>
+              {onEdit && (
+                <Tooltip title="Редактировать">
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit(car)}
+                    color="primary"
+                    aria-label="edit"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {onDelete && (
+                <Tooltip title="Удалить">
+                  <IconButton
+                    size="small"
+                    onClick={() => onDelete(car)}
+                    color="error"
+                    aria-label="delete"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+          )}
+        </Box>
+      </CardContent>
+    </Card>
   );
 };
 

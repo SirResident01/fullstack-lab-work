@@ -29,7 +29,7 @@ const OwnerForm: React.FC<OwnerFormProps> = ({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<OwnerCreate>({
+  } = useForm<{ firstname?: string; lastname?: string }>({
     defaultValues: {
       firstname: '',
       lastname: '',
@@ -50,10 +50,18 @@ const OwnerForm: React.FC<OwnerFormProps> = ({
     }
   }, [owner, reset]);
 
-  const handleFormSubmit = async (data: OwnerCreate) => {
+  const handleFormSubmit = async (data: { firstname?: string; lastname?: string }) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(data);
+      // Убеждаемся, что все обязательные поля заполнены
+      if (!data.firstname || !data.lastname) {
+        throw new Error('Все поля обязательны для заполнения');
+      }
+      const ownerData: OwnerCreate = {
+        firstname: data.firstname,
+        lastname: data.lastname,
+      };
+      await onSubmit(ownerData);
       onClose();
       reset();
     } catch (error) {

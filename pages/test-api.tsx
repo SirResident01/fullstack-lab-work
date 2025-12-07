@@ -26,8 +26,10 @@ export default function TestApiPage() {
     try {
       const response = await apiClient.createCar(carData);
       setResult(`✅ Успешно создан автомобиль: ${JSON.stringify(response, null, 2)}`);
-    } catch (error: any) {
-      setResult(`❌ Ошибка: ${error.message}\n\nДетали: ${JSON.stringify(error.response?.data, null, 2)}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorResponse = (error as any)?.response?.data;
+      setResult(`❌ Ошибка: ${errorMessage}\n\nДетали: ${JSON.stringify(errorResponse, null, 2)}`);
     } finally {
       setLoading(false);
     }
@@ -40,8 +42,10 @@ export default function TestApiPage() {
     try {
       const response = await apiClient.getCars();
       setResult(`✅ Успешно получены автомобили: ${JSON.stringify(response, null, 2)}`);
-    } catch (error: any) {
-      setResult(`❌ Ошибка: ${error.message}\n\nДетали: ${JSON.stringify(error.response?.data, null, 2)}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorResponse = (error as any)?.response?.data;
+      setResult(`❌ Ошибка: ${errorMessage}\n\nДетали: ${JSON.stringify(errorResponse, null, 2)}`);
     } finally {
       setLoading(false);
     }
@@ -54,8 +58,10 @@ export default function TestApiPage() {
     try {
       const response = await apiClient.getOwners();
       setResult(`✅ Успешно получены владельцы: ${JSON.stringify(response, null, 2)}`);
-    } catch (error: any) {
-      setResult(`❌ Ошибка: ${error.message}\n\nДетали: ${JSON.stringify(error.response?.data, null, 2)}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorResponse = (error as any)?.response?.data;
+      setResult(`❌ Ошибка: ${errorMessage}\n\nДетали: ${JSON.stringify(errorResponse, null, 2)}`);
     } finally {
       setLoading(false);
     }
