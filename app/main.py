@@ -44,9 +44,24 @@ log = logging.getLogger("lab1")
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
 
 # CORS настройки
+# Получаем CORS origins из переменных окружения или используем дефолтные
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+else:
+    # Дефолтные значения для разработки + Vercel домены
+    cors_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "https://fullstack-lab-work.vercel.app",
+        "https://fullstack-lab-work-oajjvn4s2-llls-projects-d13c13b6.vercel.app",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
