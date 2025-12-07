@@ -9,14 +9,47 @@ from .models import Base, Owner, Car, AppUser
 log = logging.getLogger(__name__)
 
 # Load .env early so DB_URL is available before engine creation
-# Загружаем config.env если существует, но не падаем если его нет
-try:
-    load_dotenv("config.env")
-except Exception as e:
-    log.warning(f"Could not load config.env: {e}")
+# ВАЖНО: В production (Railway/Render) переменные окружения имеют приоритет!
+# Сначала проверяем, есть ли DATABASE_URL в окружении (production)
+database_url_from_env = os.getenv("DATABASE_URL")
 
-# Также загружаем переменные из окружения (приоритет выше)
-load_dotenv(override=False)
+# Загружаем config.env ТОЛЬКО если DATABASE_URL не установлен (для локальной разработки)
+if not database_url_from_env:
+    try:
+        load_dotenv("config.env", override=True)
+        log.info("Loaded config.env for local development")
+    except Exception as e:
+        log.warning(f"Could not load config.env: {e}")
+else:
+    log.info("DATABASE_URL found in environment, skipping config.env (production mode)")
+
+# Перезагружаем переменные окружения с приоритетом (production переменные перезапишут config.env)
+# override=True означает, что переменные окружения ПЕРЕЗАПИШУТ значения из config.env
+load_dotenv(override=True)
+
+# Логируем все переменные окружения связанные с БД (для отладки)
+log.info("=" * 80)
+log.info("Checking database environment variables:")
+db_env_vars = ["DATABASE_URL", "DB_URL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "RDS_HOSTNAME"]
+for var in db_env_vars:
+    value = os.getenv(var)
+    if value:
+        # Маскируем пароли
+        if "@" in str(value) or "password" in var.lower():
+            try:
+                parts = str(value).split("@")
+                if len(parts) > 1:
+                    masked = parts[0].split(":")[0] + "://***:***@" + "@".join(parts[1:])
+                else:
+                    masked = "***"
+            except:
+                masked = "***"
+            log.info(f"  {var} = {masked} (SET)")
+        else:
+            log.info(f"  {var} = {value} (SET)")
+    else:
+        log.info(f"  {var} = NOT SET")
+log.info("=" * 80)
 
 # Поддержка различных типов БД:
 # - PostgreSQL: postgresql+psycopg://user:password@host:port/dbname
@@ -34,16 +67,22 @@ def get_db_url():
     """Получить URL подключения к БД с поддержкой AWS RDS и Railway/Render"""
     # Приоритет 1: DATABASE_URL (стандарт для Railway, Render, Heroku)
     database_url = os.getenv("DATABASE_URL")
+    log.info(f"Checking DATABASE_URL: {'SET' if database_url else 'NOT SET'}")
     if database_url:
         # Railway/Render могут использовать postgres:// вместо postgresql://
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
-        log.info(f"Using DATABASE_URL (masked)")
+        # Маскируем пароль для логирования
+        masked = database_url.split("@")[0].split(":")[0] + "://***:***@" + "@".join(database_url.split("@")[1:]) if "@" in database_url else "***"
+        log.info(f"Using DATABASE_URL: {masked}")
         return database_url
     
     # Приоритет 2: DB_URL (полный URL подключения)
     db_url = os.getenv("DB_URL")
+    log.info(f"Checking DB_URL: {'SET' if db_url else 'NOT SET'}")
     if db_url:
+        masked = db_url.split("@")[0].split(":")[0] + "://***:***@" + "@".join(db_url.split("@")[1:]) if "@" in db_url else "***"
+        log.info(f"Using DB_URL: {masked}")
         return db_url
     
     # Проверяем переменные AWS RDS
@@ -63,6 +102,27 @@ def get_db_url():
     db_user = os.getenv("DB_USER", "postgres")
     db_password = os.getenv("DB_PASSWORD", "postgres")
     db_type = os.getenv("DB_TYPE", "postgresql")  # postgresql или mysql
+    
+    # ВНИМАНИЕ: Использование localhost по умолчанию - это проблема для production!
+    # Если мы дошли сюда, значит DATABASE_URL и DB_URL не установлены
+    log.error("=" * 80)
+    log.error("CRITICAL: DATABASE_URL and DB_URL are not set!")
+    log.error("Available environment variables:")
+    for key in ["DATABASE_URL", "DB_URL", "DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "RDS_HOSTNAME"]:
+        value = os.getenv(key)
+        if value:
+            # Маскируем пароли
+            if "password" in key.lower() or "@" in str(value):
+                masked = str(value).split("@")[0].split(":")[0] + "://***:***@" + "@".join(str(value).split("@")[1:]) if "@" in str(value) else "***"
+                log.error(f"  {key} = {masked}")
+            else:
+                log.error(f"  {key} = {value}")
+        else:
+            log.error(f"  {key} = NOT SET")
+    log.error("=" * 80)
+    log.error(f"Falling back to default: {db_type}://{db_user}:***@{db_host}:{db_port}/{db_name}")
+    log.error("This will NOT work in production! Please set DATABASE_URL or DB_URL environment variable.")
+    log.error("=" * 80)
     
     if db_type == "mysql":
         return f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"

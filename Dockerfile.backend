@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY run.py .
 
-# Создаем пустой config.env (будет перезаписан volume mount из docker-compose)
-RUN touch config.env
+# НЕ создаем config.env в production - используем только переменные окружения
+# config.env нужен только для локальной разработки
 
 # Создаем директорию для логов
 RUN mkdir -p /app/logs
