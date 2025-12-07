@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     postgresql-client \
+    bash \
     && rm -rf /var/lib/apt/lists/*
 
 # Копируем файл зависимостей
@@ -38,7 +39,7 @@ ENV PORT=8000
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Команда запуска
+# Команда запуска - Railway автоматически устанавливает PORT
 CMD ["/app/start.sh"]
 
 

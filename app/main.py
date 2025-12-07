@@ -136,12 +136,16 @@ def role_required(required_role: str):
 async def on_startup():
     try:
         log.info("🚀 Starting application...")
+        log.info(f"Environment: PORT={os.getenv('PORT', 'NOT SET')}, DATABASE_URL={'SET' if os.getenv('DATABASE_URL') else 'NOT SET'}")
         init_db_with_seed()
         log.info("🚀 Application started successfully")
     except Exception as e:
         log.error(f"❌ Failed to start application: {e}")
-        # Пробрасываем ошибку дальше, чтобы приложение не запустилось с неработающей БД
-        raise
+        import traceback
+        log.error(f"Traceback: {traceback.format_exc()}")
+        # В production не падаем полностью, но логируем ошибку
+        # Это позволит приложению запуститься и показать ошибку в /api/status
+        log.error("Application will continue but database operations may fail")
 
 # ==================== BASIC ENDPOINTS ====================
 
