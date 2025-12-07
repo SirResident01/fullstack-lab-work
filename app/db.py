@@ -3,7 +3,7 @@ import logging
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, MultipleResultsFound, IntegrityError
 from .models import Base, Owner, Car, AppUser
 
 # Настройка логирования
@@ -112,35 +112,112 @@ engine = create_engine(
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def init_db_with_seed() -> None:
-    """Create tables if not exist and seed initial data once."""
+    """Create tables if not exist and seed initial data once. Idempotent - safe to call multiple times."""
     try:
         log.info("Initializing database...")
         Base.metadata.create_all(engine)
         log.info("Database tables created/verified")
         
         with SessionLocal() as s:
-            # Используем новый синтаксис SQLAlchemy 2.0
+            # Используем .scalars().first() вместо scalar_one_or_none() для безопасной проверки
+            # Это вернет первый результат или None, независимо от количества записей
             stmt = select(Owner)
             result = s.execute(stmt)
-            first_owner = result.scalar_one_or_none()
+            first_owner = result.scalars().first()
             
             # Создаем только демонстрационные данные (автомобили и владельцев)
             # Пользователи создаются только через регистрацию
             if not first_owner:
                 log.info("Seeding initial data...")
-                o1 = Owner(firstname="John", lastname="Johnson")
-                o2 = Owner(firstname="Mary", lastname="Robinson")
-                s.add_all([o1, o2])
-                s.commit()  # Сохраняем владельцев сначала
                 
-                # Теперь создаем автомобили с правильными owner_id
-                s.add_all([
-                    Car(brand="Ford",   model="Mustang", color="Red",    registrationNumber="ADF-1121", modelYear=2023, price=59000, owner_id=o1.ownerid),
-                    Car(brand="Nissan", model="Leaf",    color="White",  registrationNumber="SSJ-3002", modelYear=2020, price=29000, owner_id=o2.ownerid),
-                    Car(brand="Toyota", model="Prius",   color="Silver", registrationNumber="KKO-0212", modelYear=2022, price=39000, owner_id=o2.ownerid),
-                ])
+                # Проверяем существование владельцев по имени и фамилии (get-or-create pattern)
+                # John Johnson
+                stmt_john = select(Owner).where(
+                    Owner.firstname == "John",
+                    Owner.lastname == "Johnson"
+                )
+                o1 = s.execute(stmt_john).scalars().first()
+                if not o1:
+                    o1 = Owner(firstname="John", lastname="Johnson")
+                    s.add(o1)
+                    s.flush()  # Получаем ownerid
+                    log.info("Created owner: John Johnson")
+                else:
+                    log.info("Owner John Johnson already exists, skipping")
+                
+                # Mary Robinson
+                stmt_mary = select(Owner).where(
+                    Owner.firstname == "Mary",
+                    Owner.lastname == "Robinson"
+                )
+                o2 = s.execute(stmt_mary).scalars().first()
+                if not o2:
+                    o2 = Owner(firstname="Mary", lastname="Robinson")
+                    s.add(o2)
+                    s.flush()  # Получаем ownerid
+                    log.info("Created owner: Mary Robinson")
+                else:
+                    log.info("Owner Mary Robinson already exists, skipping")
+                
+                s.commit()  # Сохраняем владельцев
+                
+                # Теперь создаем автомобили с проверкой по registrationNumber (уникальное поле)
+                # Ford Mustang
+                stmt_car1 = select(Car).where(Car.registrationNumber == "ADF-1121")
+                car1 = s.execute(stmt_car1).scalars().first()
+                if not car1:
+                    car1 = Car(
+                        brand="Ford",
+                        model="Mustang",
+                        color="Red",
+                        registrationNumber="ADF-1121",
+                        modelYear=2023,
+                        price=59000,
+                        owner_id=o1.ownerid
+                    )
+                    s.add(car1)
+                    log.info("Created car: Ford Mustang (ADF-1121)")
+                else:
+                    log.info("Car ADF-1121 already exists, skipping")
+                
+                # Nissan Leaf
+                stmt_car2 = select(Car).where(Car.registrationNumber == "SSJ-3002")
+                car2 = s.execute(stmt_car2).scalars().first()
+                if not car2:
+                    car2 = Car(
+                        brand="Nissan",
+                        model="Leaf",
+                        color="White",
+                        registrationNumber="SSJ-3002",
+                        modelYear=2020,
+                        price=29000,
+                        owner_id=o2.ownerid
+                    )
+                    s.add(car2)
+                    log.info("Created car: Nissan Leaf (SSJ-3002)")
+                else:
+                    log.info("Car SSJ-3002 already exists, skipping")
+                
+                # Toyota Prius
+                stmt_car3 = select(Car).where(Car.registrationNumber == "KKO-0212")
+                car3 = s.execute(stmt_car3).scalars().first()
+                if not car3:
+                    car3 = Car(
+                        brand="Toyota",
+                        model="Prius",
+                        color="Silver",
+                        registrationNumber="KKO-0212",
+                        modelYear=2022,
+                        price=39000,
+                        owner_id=o2.ownerid
+                    )
+                    s.add(car3)
+                    log.info("Created car: Toyota Prius (KKO-0212)")
+                else:
+                    log.info("Car KKO-0212 already exists, skipping")
+                
                 s.commit()
-                log.info("Initial data seeded successfully")
+                log.info("Initial data seeded successfully (idempotent)")
             else:
                 log.info("Database already has data, skipping seed")
         
@@ -159,9 +236,22 @@ def init_db_with_seed() -> None:
         log.error("=" * 80)
         log.warning("Application running without database")
         # НЕ поднимаем исключение - приложение должно продолжить работу
+    except (MultipleResultsFound, IntegrityError) as e:
+        log.error("=" * 80)
+        log.error("Error during DB seeding; database is reachable but seed data may be inconsistent")
+        log.error(f"Error type: {type(e).__name__}")
+        log.error(f"Error message: {e}")
+        log.error("=" * 80)
+        log.warning("Database is reachable, but seeding encountered data consistency issues.")
+        log.warning("Application will continue running with existing data.")
+        # НЕ поднимаем исключение - приложение может работать с существующими данными
     except Exception as e:
-        log.error(f"Error initializing database: {e}")
+        log.error("=" * 80)
+        log.error("Unexpected error during DB init")
+        log.error(f"Error type: {type(e).__name__}")
+        log.error(f"Error message: {e}")
         import traceback
         log.error(f"Traceback: {traceback.format_exc()}")
-        log.warning("Application running without database")
-        # Для других ошибок тоже не падаем, но логируем детально
+        log.error("=" * 80)
+        log.warning("Application will continue running, but database initialization may be incomplete.")
+        # НЕ поднимаем исключение - приложение должно продолжить работу
