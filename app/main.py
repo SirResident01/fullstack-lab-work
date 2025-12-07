@@ -153,8 +153,8 @@ async def on_startup():
 
 @app.get("/")
 def root():
-    """Root endpoint"""
-    return {"message": "Car Management API", "status": "running", "version": APP_VERSION}
+    """Root endpoint - health check, does not require database"""
+    return {"status": "running", "service": APP_NAME}
 
 @app.get("/hello")
 def hello():
