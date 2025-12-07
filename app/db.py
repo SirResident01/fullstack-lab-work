@@ -35,19 +35,20 @@ def get_db_url():
     """Получить URL подключения к БД ТОЛЬКО из DATABASE_URL"""
     database_url = os.getenv("DATABASE_URL")
     
-    if not database_url:
+    if database_url is None:
         log.error("=" * 80)
         log.error("CRITICAL ERROR: DATABASE_URL is not set!")
         log.error("=" * 80)
         log.error("The application requires DATABASE_URL environment variable to be set.")
         log.error("On Railway:")
-        log.error("1. Go to Railway Dashboard → Your PostgreSQL Database")
-        log.error("2. Settings → Connect → Select your Web Service")
-        log.error("3. Railway will automatically create DATABASE_URL variable")
-        log.error("4. Or add it manually in your service Variables")
+        log.error("1. Go to Railway Dashboard → Your Backend Service")
+        log.error("2. Variables → New Variable")
+        log.error("3. KEY: DATABASE_URL")
+        log.error("4. VALUE: ${{ Postgres.DATABASE_URL }}")
+        log.error("5. Save and redeploy")
         log.error("=" * 80)
         raise RuntimeError(
-            "DATABASE_URL is not set. Please configure it in the environment (Railway variables)."
+            "DATABASE_URL is not set. Configure it in Railway Variables."
         )
     
     # Railway/Render могут использовать postgres:// вместо postgresql://
@@ -63,6 +64,7 @@ def get_db_url():
     
     return database_url
 
+# Получаем DATABASE_URL - если не установлен, будет RuntimeError
 DB_URL = get_db_url()
 
 # Настройки для production (Railway PostgreSQL)
@@ -72,18 +74,30 @@ connect_args = {
 }
 
 # Для PostgreSQL добавляем SSL если не указан в URL
+# Railway использует внутренний URL (postgres.railway.internal), который не требует SSL
+# Но если используется внешний URL, может потребоваться SSL
 if "postgresql" in DB_URL or "postgres" in DB_URL:
     # Проверяем, не указан ли уже sslmode в URL
     if "sslmode" not in DB_URL.lower():
-        # Для облачных PostgreSQL (Railway, Render, Supabase) требуется SSL
-        connect_args["sslmode"] = "require"
-        log.info("Added SSL mode 'require' for PostgreSQL connection")
+        # Для внешних подключений (не internal) может потребоваться SSL
+        # Railway обычно использует внутренний URL (postgres.railway.internal), который не требует SSL
+        if "railway.internal" not in DB_URL.lower():
+            # Пробуем добавить SSL, но если не получится - продолжаем без него
+            try:
+                connect_args["sslmode"] = "require"
+                log.info("Added SSL mode 'require' for PostgreSQL connection (external URL)")
+            except Exception as e:
+                log.warning(f"Could not set SSL mode: {e}")
+        else:
+            log.info("Using internal Railway PostgreSQL URL (SSL not required)")
     else:
         log.info("SSL mode already specified in DATABASE_URL")
 elif "mysql" in DB_URL:
     # Для MySQL используем charset
     connect_args["charset"] = "utf8mb4"
 
+# Создаем engine с правильными параметрами
+# Используем DATABASE_URL напрямую, без ручной подстановки
 engine = create_engine(
     DB_URL,
     echo=os.getenv("DB_ECHO", "False").lower() == "true",
@@ -93,6 +107,8 @@ engine = create_engine(
     pool_recycle=3600,  # Переподключение каждый час
     connect_args=connect_args
 )
+
+# Создаем SessionLocal для работы с БД
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def init_db_with_seed() -> None:
@@ -127,23 +143,25 @@ def init_db_with_seed() -> None:
                 log.info("Initial data seeded successfully")
             else:
                 log.info("Database already has data, skipping seed")
+        
+        log.info("Database initialized successfully")
     except OperationalError as e:
         log.error("=" * 80)
-        log.error("Database unreachable, starting app without DB.")
+        log.error("Database unreachable, starting without DB")
         log.error(f"OperationalError: {e}")
         log.error("=" * 80)
         log.error("The application will continue running, but database operations will fail.")
         log.error("Please check:")
-        log.error("1. DATABASE_URL is correctly set")
-        log.error("2. Database server is accessible")
+        log.error("1. DATABASE_URL is correctly set in Railway Variables")
+        log.error("2. PostgreSQL service is running and accessible")
         log.error("3. Network connectivity is available")
-        log.error("4. SSL/TLS settings are correct")
+        log.error("4. SSL/TLS settings are correct (if using external URL)")
         log.error("=" * 80)
+        log.warning("Application running without database")
         # НЕ поднимаем исключение - приложение должно продолжить работу
     except Exception as e:
         log.error(f"Error initializing database: {e}")
         import traceback
         log.error(f"Traceback: {traceback.format_exc()}")
+        log.warning("Application running without database")
         # Для других ошибок тоже не падаем, но логируем детально
-        log.error("Database initialization failed, but application will continue running.")
-
