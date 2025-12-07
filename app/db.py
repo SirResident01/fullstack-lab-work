@@ -20,8 +20,16 @@ load_dotenv("config.env")
 # 4. Значение по умолчанию
 
 def get_db_url():
-    """Получить URL подключения к БД с поддержкой AWS RDS"""
-    # Если указан полный DB_URL, используем его
+    """Получить URL подключения к БД с поддержкой AWS RDS и Railway/Render"""
+    # Приоритет 1: DATABASE_URL (стандарт для Railway, Render, Heroku)
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        # Railway/Render могут использовать postgres:// вместо postgresql://
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        return database_url
+    
+    # Приоритет 2: DB_URL (полный URL подключения)
     db_url = os.getenv("DB_URL")
     if db_url:
         return db_url

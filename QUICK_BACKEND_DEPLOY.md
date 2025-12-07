@@ -27,12 +27,17 @@
 В настройках проекта → **Variables** добавьте:
 
 ```env
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+# DATABASE_URL создается автоматически Railway при добавлении PostgreSQL
+# Просто используйте: DATABASE_URL=${{Postgres.DATABASE_URL}}
+# Или Railway автоматически подставит его, если вы связали базу данных
+
 SECRET_KEY=your-very-secure-secret-key-min-32-characters-long
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 CORS_ORIGINS=https://fullstack-lab-work.vercel.app,https://fullstack-lab-work-oajjvn4s2-llls-projects-d13c13b6.vercel.app
 ```
+
+**Важно:** После добавления PostgreSQL базы данных, Railway автоматически создаст переменную `DATABASE_URL`. Убедитесь, что база данных связана с вашим сервисом (в настройках PostgreSQL → **Connect** → выберите ваш Web Service).
 
 ### Шаг 5: Получение URL
 
