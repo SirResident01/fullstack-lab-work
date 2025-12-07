@@ -5,13 +5,16 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p $PORT || next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "next": "^14.0.0",
