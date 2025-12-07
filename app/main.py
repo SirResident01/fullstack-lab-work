@@ -56,7 +56,6 @@ else:
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "https://fullstack-lab-work.vercel.app",
-        "https://fullstack-lab-work-oajjvn4s2-llls-projects-d13c13b6.vercel.app",
     ]
 
 app.add_middleware(
@@ -153,8 +152,8 @@ async def on_startup():
 
 @app.get("/")
 def root():
-    """Root endpoint - health check, does not require database"""
-    return {"status": "running", "service": APP_NAME}
+    """Root endpoint"""
+    return {"message": "Car Management API", "status": "running", "version": APP_VERSION}
 
 @app.get("/hello")
 def hello():
