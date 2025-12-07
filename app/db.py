@@ -65,13 +65,16 @@ log.info("=" * 80)
 
 def get_db_url():
     """Получить URL подключения к БД с поддержкой AWS RDS и Railway/Render"""
-    # Приоритет 1: DATABASE_URL (стандарт для Railway, Render, Heroku)
+    # Приоритет 1: DATABASE_URL (стандарт для Railway, Render, Heroku, Supabase)
     database_url = os.getenv("DATABASE_URL")
     log.info(f"Checking DATABASE_URL: {'SET' if database_url else 'NOT SET'}")
     if database_url:
-        # Railway/Render могут использовать postgres:// вместо postgresql://
+        # Railway/Render/Supabase могут использовать postgres:// вместо postgresql://
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        # Также проверяем postgresql:// без psycopg
+        elif database_url.startswith("postgresql://") and "+psycopg" not in database_url:
+            database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
         # Маскируем пароль для логирования
         masked = database_url.split("@")[0].split(":")[0] + "://***:***@" + "@".join(database_url.split("@")[1:]) if "@" in database_url else "***"
         log.info(f"Using DATABASE_URL: {masked}")
@@ -131,13 +134,36 @@ def get_db_url():
 
 DB_URL = get_db_url()
 
+# КРИТИЧЕСКАЯ ПРОВЕРКА: В production НЕ должно быть localhost!
+if DB_URL and ("localhost" in DB_URL or "127.0.0.1" in DB_URL):
+    # Проверяем, не в production ли мы (если есть PORT или другие признаки Railway/Render)
+    is_production = os.getenv("PORT") or os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RENDER")
+    if is_production:
+        log.error("=" * 80)
+        log.error("CRITICAL ERROR: Trying to connect to localhost in PRODUCTION!")
+        log.error("This means DATABASE_URL is not set in Railway/Render!")
+        log.error("=" * 80)
+        log.error("SOLUTION:")
+        log.error("1. Go to Railway Dashboard → Your PostgreSQL Database")
+        log.error("2. Settings → Connect → Select your Web Service")
+        log.error("3. Railway will automatically create DATABASE_URL variable")
+        log.error("4. Or add it manually: DATABASE_URL = Connection String from PostgreSQL")
+        log.error("=" * 80)
+        raise ValueError(
+            "DATABASE_URL is not set in production! "
+            "Please connect PostgreSQL database to your service in Railway Dashboard."
+        )
+
 # Логируем информацию о подключении (без пароля)
 if DB_URL:
     # Маскируем пароль в URL для безопасности
     masked_url = DB_URL.split("@")[0].split(":")[0] + "://***:***@" + "@".join(DB_URL.split("@")[1:]) if "@" in DB_URL else "***"
     log.info(f"Database URL: {masked_url}")
 else:
-    log.warning("No database URL found! Using default localhost connection.")
+    log.error("=" * 80)
+    log.error("CRITICAL: No database URL found!")
+    log.error("=" * 80)
+    raise ValueError("Database URL is not configured! Please set DATABASE_URL or DB_URL environment variable.")
 
 # Настройки для production (AWS RDS)
 engine = create_engine(
