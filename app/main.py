@@ -134,8 +134,14 @@ def role_required(required_role: str):
 
 @app.on_event("startup")
 async def on_startup():
-    init_db_with_seed()
-    log.info("🚀 Application started")
+    try:
+        log.info("🚀 Starting application...")
+        init_db_with_seed()
+        log.info("🚀 Application started successfully")
+    except Exception as e:
+        log.error(f"❌ Failed to start application: {e}")
+        # Пробрасываем ошибку дальше, чтобы приложение не запустилось с неработающей БД
+        raise
 
 # ==================== BASIC ENDPOINTS ====================
 

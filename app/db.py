@@ -1,11 +1,22 @@
 import os
+import logging
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from .models import Base, Owner, Car, AppUser
 
+# Настройка логирования
+log = logging.getLogger(__name__)
+
 # Load .env early so DB_URL is available before engine creation
-load_dotenv("config.env")
+# Загружаем config.env если существует, но не падаем если его нет
+try:
+    load_dotenv("config.env")
+except Exception as e:
+    log.warning(f"Could not load config.env: {e}")
+
+# Также загружаем переменные из окружения (приоритет выше)
+load_dotenv(override=False)
 
 # Поддержка различных типов БД:
 # - PostgreSQL: postgresql+psycopg://user:password@host:port/dbname
@@ -27,6 +38,7 @@ def get_db_url():
         # Railway/Render могут использовать postgres:// вместо postgresql://
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql+psycopg://", 1)
+        log.info(f"Using DATABASE_URL (masked)")
         return database_url
     
     # Приоритет 2: DB_URL (полный URL подключения)
@@ -59,6 +71,14 @@ def get_db_url():
 
 DB_URL = get_db_url()
 
+# Логируем информацию о подключении (без пароля)
+if DB_URL:
+    # Маскируем пароль в URL для безопасности
+    masked_url = DB_URL.split("@")[0].split(":")[0] + "://***:***@" + "@".join(DB_URL.split("@")[1:]) if "@" in DB_URL else "***"
+    log.info(f"Database URL: {masked_url}")
+else:
+    log.warning("No database URL found! Using default localhost connection.")
+
 # Настройки для production (AWS RDS)
 engine = create_engine(
     DB_URL,
@@ -76,21 +96,39 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 def init_db_with_seed() -> None:
     """Create tables if not exist and seed initial data once."""
-    Base.metadata.create_all(engine)
-    with SessionLocal() as s:
-        # Создаем только демонстрационные данные (автомобили и владельцев)
-        # Пользователи создаются только через регистрацию
-        if not s.query(Owner).first():
-            o1 = Owner(firstname="John", lastname="Johnson")
-            o2 = Owner(firstname="Mary", lastname="Robinson")
-            s.add_all([o1, o2])
-            s.commit()  # Сохраняем владельцев сначала
+    try:
+        log.info("Initializing database...")
+        Base.metadata.create_all(engine)
+        log.info("Database tables created/verified")
+        
+        with SessionLocal() as s:
+            # Используем новый синтаксис SQLAlchemy 2.0
+            stmt = select(Owner)
+            result = s.execute(stmt)
+            first_owner = result.scalar_one_or_none()
             
-            # Теперь создаем автомобили с правильными owner_id
-            s.add_all([
-                Car(brand="Ford",   model="Mustang", color="Red",    registrationNumber="ADF-1121", modelYear=2023, price=59000, owner_id=o1.ownerid),
-                Car(brand="Nissan", model="Leaf",    color="White",  registrationNumber="SSJ-3002", modelYear=2020, price=29000, owner_id=o2.ownerid),
-                Car(brand="Toyota", model="Prius",   color="Silver", registrationNumber="KKO-0212", modelYear=2022, price=39000, owner_id=o2.ownerid),
-            ])
-            s.commit()
+            # Создаем только демонстрационные данные (автомобили и владельцев)
+            # Пользователи создаются только через регистрацию
+            if not first_owner:
+                log.info("Seeding initial data...")
+                o1 = Owner(firstname="John", lastname="Johnson")
+                o2 = Owner(firstname="Mary", lastname="Robinson")
+                s.add_all([o1, o2])
+                s.commit()  # Сохраняем владельцев сначала
+                
+                # Теперь создаем автомобили с правильными owner_id
+                s.add_all([
+                    Car(brand="Ford",   model="Mustang", color="Red",    registrationNumber="ADF-1121", modelYear=2023, price=59000, owner_id=o1.ownerid),
+                    Car(brand="Nissan", model="Leaf",    color="White",  registrationNumber="SSJ-3002", modelYear=2020, price=29000, owner_id=o2.ownerid),
+                    Car(brand="Toyota", model="Prius",   color="Silver", registrationNumber="KKO-0212", modelYear=2022, price=39000, owner_id=o2.ownerid),
+                ])
+                s.commit()
+                log.info("Initial data seeded successfully")
+            else:
+                log.info("Database already has data, skipping seed")
+    except Exception as e:
+        log.error(f"Error initializing database: {e}")
+        # Не падаем при ошибке инициализации, чтобы приложение могло запуститься
+        # и показать более понятную ошибку
+        raise
 
