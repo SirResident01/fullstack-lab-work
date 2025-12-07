@@ -140,6 +140,8 @@ async def on_startup():
         init_db_with_seed()
         log.info("🚀 Application started successfully")
     except Exception as e:
+        # init_db_with_seed() теперь не поднимает OperationalError,
+        # но на всякий случай обрабатываем все исключения
         log.error(f"❌ Failed to start application: {e}")
         import traceback
         log.error(f"Traceback: {traceback.format_exc()}")

@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 from .models import Base, Owner, Car, AppUser
 
 # Настройка логирования
@@ -165,7 +166,25 @@ else:
     log.error("=" * 80)
     raise ValueError("Database URL is not configured! Please set DATABASE_URL or DB_URL environment variable.")
 
-# Настройки для production (AWS RDS)
+# Настройки для production (AWS RDS, Supabase)
+# Подготовка connect_args с поддержкой SSL для Supabase
+connect_args = {
+    "connect_timeout": 10,
+}
+
+# Для PostgreSQL (включая Supabase) добавляем SSL
+if "postgresql" in DB_URL or "postgres" in DB_URL:
+    # Проверяем, не указан ли уже sslmode в URL
+    if "sslmode" not in DB_URL.lower():
+        # Для Supabase и других облачных PostgreSQL требуется SSL
+        connect_args["sslmode"] = "require"
+        log.info("Added SSL mode 'require' for PostgreSQL connection (Supabase support)")
+    else:
+        log.info("SSL mode already specified in DATABASE_URL")
+elif "mysql" in DB_URL:
+    # Для MySQL используем charset
+    connect_args["charset"] = "utf8mb4"
+
 engine = create_engine(
     DB_URL,
     echo=os.getenv("DB_ECHO", "False").lower() == "true",
@@ -173,10 +192,7 @@ engine = create_engine(
     pool_size=5,
     max_overflow=10,
     pool_recycle=3600,  # Переподключение каждый час
-    connect_args={
-        "connect_timeout": 10,
-        "charset": "utf8mb4" if "mysql" in DB_URL else None
-    }
+    connect_args=connect_args
 )
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
@@ -212,9 +228,23 @@ def init_db_with_seed() -> None:
                 log.info("Initial data seeded successfully")
             else:
                 log.info("Database already has data, skipping seed")
+    except OperationalError as e:
+        log.error("=" * 80)
+        log.error("Database unreachable, starting app without DB.")
+        log.error(f"OperationalError: {e}")
+        log.error("=" * 80)
+        log.error("The application will continue running, but database operations will fail.")
+        log.error("Please check:")
+        log.error("1. DATABASE_URL is correctly set")
+        log.error("2. Database server is accessible")
+        log.error("3. Network connectivity is available")
+        log.error("4. SSL/TLS settings are correct (for Supabase)")
+        log.error("=" * 80)
+        # НЕ поднимаем исключение - приложение должно продолжить работу
     except Exception as e:
         log.error(f"Error initializing database: {e}")
-        # Не падаем при ошибке инициализации, чтобы приложение могло запуститься
-        # и показать более понятную ошибку
-        raise
+        import traceback
+        log.error(f"Traceback: {traceback.format_exc()}")
+        # Для других ошибок тоже не падаем, но логируем детально
+        log.error("Database initialization failed, but application will continue running.")
 
