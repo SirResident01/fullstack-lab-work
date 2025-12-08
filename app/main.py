@@ -49,13 +49,14 @@ cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
 else:
-    # Дефолтные значения для разработки + Vercel домены
+    # Дефолтные значения для разработки + Vercel и Railway домены
     cors_origins = [
         "http://localhost:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "https://fullstack-lab-work.vercel.app",
+        "https://web-123-b09c.up.railway.app",  # Railway фронтенд
     ]
 
 app.add_middleware(
