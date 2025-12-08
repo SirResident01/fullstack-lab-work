@@ -89,3 +89,4 @@ WHERE table_schema = 'public'
   AND table_name IN ('app_users', 'owner', 'car')
 ORDER BY table_name, ordinal_position;
 
+

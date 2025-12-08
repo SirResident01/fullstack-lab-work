@@ -74,3 +74,4 @@ if __name__ == "__main__":
     success = create_tables()
     sys.exit(0 if success else 1)
 
+

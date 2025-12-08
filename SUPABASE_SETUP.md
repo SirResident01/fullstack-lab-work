@@ -47,3 +47,4 @@ Application started successfully
 - Код автоматически конвертирует `postgresql://` в `postgresql+psycopg://` для SQLAlchemy
 - В production используется переменная `DATABASE_URL` (не config.env)
 
+

@@ -69,3 +69,4 @@
 2. `https://your-api.railway.app/hello` - должен вернуть "Hello from FastAPI!"
 3. Frontend должен подключиться к API
 
+

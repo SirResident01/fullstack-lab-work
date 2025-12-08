@@ -35,3 +35,4 @@ CREATE TABLE IF NOT EXISTS car (
 
 CREATE INDEX IF NOT EXISTS ix_car_owner_id ON car(owner_id);
 
+

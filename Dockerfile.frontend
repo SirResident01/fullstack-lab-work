@@ -43,8 +43,12 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+# Railway автоматически устанавливает переменную PORT
+# Используем её или 3000 по умолчанию
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
+# Next.js standalone автоматически читает PORT из process.env
+# Railway устанавливает PORT автоматически
 CMD ["node", "server.js"]
 
