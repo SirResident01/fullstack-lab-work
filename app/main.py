@@ -137,7 +137,7 @@ async def on_startup():
     try:
         log.info("🚀 Starting application...")
         log.info(f"Environment: PORT={os.getenv('PORT', 'NOT SET')}, DATABASE_URL={'SET' if os.getenv('DATABASE_URL') else 'NOT SET'}")
-        init_db_with_seed()
+    init_db_with_seed()
         log.info("🚀 Application started successfully")
     except Exception as e:
         # init_db_with_seed() теперь не поднимает OperationalError,

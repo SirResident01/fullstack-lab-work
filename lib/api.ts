@@ -24,6 +24,13 @@ class ApiClient {
     // Use NEXT_PUBLIC_API_URL for production, fallback to localhost for development
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
     
+    // Логирование для отладки (только в браузере)
+    if (typeof window !== 'undefined') {
+      console.log('🔧 API Client initialized with URL:', apiUrl);
+      console.log('🔧 NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.log('🔧 NEXT_PUBLIC_API_BASE_URL:', process.env.NEXT_PUBLIC_API_BASE_URL);
+    }
+    
     this.client = axios.create({
       baseURL: apiUrl,
       timeout: 10000,

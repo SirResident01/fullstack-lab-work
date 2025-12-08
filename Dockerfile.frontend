@@ -19,6 +19,11 @@ COPY . .
 # Отключаем telemetry Next.js
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Переменные окружения для сборки (NEXT_PUBLIC_* встраиваются в код во время build)
+# Railway передаст эти переменные во время сборки
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Собираем приложение в standalone режиме
 RUN npm run build
 
